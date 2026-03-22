@@ -1,0 +1,2776 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<title>FallGuard</title>
+
+<!-- PWA Meta Tags -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FallGuard">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1a1a1e" id="theme-color-meta">
+<meta name="description" content="Deine persönliche Gesundheits- und Notfall-App">
+<meta name="msapplication-TileColor" content="#1a1a1e">
+<meta name="msapplication-TileImage" content="icons/icon-144.png">
+
+<!-- PWA Manifest -->
+<link rel="manifest" href="manifest.json">
+
+<!-- Apple Touch Icons -->
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152.png">
+<link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" sizes="512x512" href="icons/icon-512.png">
+
+<!-- Favicon -->
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png">
+
+<!-- Apple Splash Screens (iOS) -->
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #1a1a1e;
+    --surface: #242429;
+    --surface2: #2e2e35;
+    --surface3: #38383f;
+    --primary: #2a2a30;
+    --wine: #8b1a2e;
+    --wine-light: #b02240;
+    --wine-glow: rgba(139,26,46,0.25);
+    --wine-ultra: rgba(139,26,46,0.08);
+    --text: #f0f0f3;
+    --text-muted: #8a8a95;
+    --text-dim: #5a5a65;
+    --border: rgba(255,255,255,0.07);
+    --radius: 20px;
+    --radius-sm: 12px;
+    --shadow: 0 8px 32px rgba(0,0,0,0.4);
+    --green: #2ecc71;
+    --blue: #3498db;
+    --orange: #e67e22;
+    --purple: #9b59b6;
+    /* Safe area insets for notch/Dynamic Island */
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-left: env(safe-area-inset-left, 0px);
+    --safe-right: env(safe-area-inset-right, 0px);
+    /* Nav height */
+    --nav-height: calc(64px + var(--safe-bottom));
+  }
+
+  /* ===== LIGHT MODE ===== */
+  body.light {
+    --bg: #f4f4f6;
+    --surface: #ffffff;
+    --surface2: #ededf0;
+    --surface3: #e0e0e5;
+    --primary: #f0f0f3;
+    --wine: #8b1a2e;
+    --wine-light: #b02240;
+    --wine-glow: rgba(139,26,46,0.18);
+    --wine-ultra: rgba(139,26,46,0.06);
+    --text: #18181c;
+    --text-muted: #6a6a78;
+    --text-dim: #a0a0b0;
+    --border: rgba(0,0,0,0.08);
+    --shadow: 0 8px 32px rgba(0,0,0,0.12);
+  }
+  body.light .bottom-nav { background: rgba(244,244,246,0.95); }
+  body.light .page-header { background: var(--bg); }
+  body.light .home-hero { background: linear-gradient(135deg, #fff 0%, #f0f0f5 100%); }
+  body.light .home-hero::before { background: rgba(176,34,64,0.12); }
+  body.light .scan-animation { background: #ededf0; }
+  body.light .modal-sheet { background: #fff; }
+  body.light .found-device { background: var(--bg); }
+  body.light .chat-bubble.bot { background: #fff; color: var(--text); }
+  body.light .chat-input { background: var(--bg); color: var(--text); }
+  body.light .period-tab { background: var(--surface); }
+  body.light #notruf-card { background: #0f0f12; }
+  body.light #goals-overlay { background: var(--bg); }
+  body.light #goals-editor .goal-card { background: #fff; }
+  body.light .steps-bars .step-bar { background: #dddde5; }
+  body.light .section-title { color: var(--text-muted); }
+
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  body {
+    background: var(--bg);
+    font-family: 'DM Sans', sans-serif;
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+    /* Full screen — use entire viewport */
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+  }
+
+  /* ── App Shell ───────────────────────────────────────────── */
+  #app {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    /* Respect safe areas */
+    padding-top: var(--safe-top);
+    padding-left: var(--safe-left);
+    padding-right: var(--safe-right);
+  }
+
+  .pages {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .page {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-bottom: var(--nav-height);
+    scrollbar-width: none;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateX(30px) scale(0.97);
+    transition: opacity 0.32s cubic-bezier(0.4,0,0.2,1), transform 0.32s cubic-bezier(0.4,0,0.2,1);
+    will-change: transform, opacity;
+  }
+  .page::-webkit-scrollbar { display:none; }
+  .page.active {
+    pointer-events: auto;
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+
+  /* ── Bottom Nav ──────────────────────────────────────────── */
+  .bottom-nav {
+    height: var(--nav-height);
+    background: rgba(30,30,36,0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-around;
+    flex-shrink: 0;
+    padding: 8px 8px 0;
+    padding-bottom: calc(var(--safe-bottom) + 4px);
+    position: relative;
+    z-index: 100;
+  }
+
+  .nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.2s;
+    flex: 1;
+    min-width: 0;
+  }
+  .nav-item .nav-icon {
+    width: 28px; height: 28px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 8px;
+    transition: all 0.2s;
+    font-size: 18px;
+  }
+  .nav-item .nav-label {
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--text-dim);
+    transition: color 0.2s;
+    white-space: nowrap;
+  }
+  .nav-item.active .nav-icon { background: var(--wine-glow); }
+  .nav-item.active .nav-label { color: var(--wine-light); }
+
+  /* ── Page Header ─────────────────────────────────────────── */
+  .page-header {
+    padding: 16px 20px 14px;
+    position: sticky; top: 0;
+    background: var(--bg);
+    z-index: 50;
+    border-bottom: 1px solid transparent;
+  }
+  .page-header h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(22px, 6vw, 30px);
+    font-weight: 800;
+    letter-spacing: -0.5px;
+  }
+  .page-header p { color: var(--text-muted); font-size: 13px; margin-top: 2px; }
+
+  .wine-text { color: var(--wine-light); }
+
+  /* ── Home Hero ───────────────────────────────────────────── */
+  .home-hero {
+    padding: 20px;
+    background: linear-gradient(135deg, var(--surface) 0%, #1e1e24 100%);
+    margin: 12px 16px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+  .home-hero::before {
+    content: '';
+    position: absolute;
+    top: -30px; right: -30px;
+    width: 120px; height: 120px;
+    background: var(--wine-glow);
+    border-radius: 50%;
+    filter: blur(40px);
+  }
+  .hero-label { font-size: 11px; color: var(--wine-light); font-weight: 600; letter-spacing: 1px; text-transform: uppercase; }
+  .hero-title { font-family: 'Syne', sans-serif; font-size: clamp(18px, 5vw, 22px); font-weight: 800; margin: 6px 0 4px; }
+  .hero-sub { font-size: 13px; color: var(--text-muted); }
+  .hero-status { display:flex; align-items:center; gap:8px; margin-top: 12px; }
+  .status-dot { width:8px; height:8px; background: var(--green); border-radius:50%; box-shadow: 0 0 8px var(--green); animation: pulse-dot 2s infinite; flex-shrink:0; }
+  @keyframes pulse-dot { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.6;transform:scale(1.3)} }
+  .status-text { font-size:12px; color: var(--text-muted); }
+
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 8px 20px 10px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* ── Quick Stats Grid ────────────────────────────────────── */
+  .quick-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin: 0 16px 14px;
+  }
+  .stat-mini {
+    background: var(--surface);
+    border-radius: var(--radius-sm);
+    padding: 14px;
+    border: 1px solid var(--border);
+  }
+  .stat-mini .s-val { font-family: 'Syne', sans-serif; font-size: clamp(20px, 5vw, 26px); font-weight: 800; }
+  .stat-mini .s-unit { font-size: 12px; color: var(--text-muted); margin-left: 3px; }
+  .stat-mini .s-label { font-size: 11px; color: var(--text-dim); margin-top: 3px; }
+  .stat-mini .s-icon { font-size: 18px; margin-bottom: 6px; }
+
+  /* ── Device Cards ────────────────────────────────────────── */
+  .device-card {
+    margin: 0 16px 10px;
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 16px;
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    -webkit-user-select: none; user-select: none;
+  }
+  .device-card:active { transform: scale(0.98); }
+  .device-icon {
+    width: 46px; height: 46px;
+    background: linear-gradient(135deg, var(--wine) 0%, #6d1524 100%);
+    border-radius: 13px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+  .device-info { flex: 1; min-width: 0; }
+  .device-info h3 { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; }
+  .device-info p { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .device-battery { display:flex; flex-direction:column; align-items:flex-end; gap:3px; flex-shrink:0; }
+  .battery-val { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700; color: var(--green); }
+  .battery-label { font-size: 10px; color: var(--text-dim); }
+
+  /* ── Modal ───────────────────────────────────────────────── */
+  .modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0);
+    z-index: 200;
+    display: flex;
+    align-items: flex-end;
+    pointer-events: none;
+    transition: background 0.3s ease;
+  }
+  .modal-overlay.open {
+    background: rgba(0,0,0,0.85);
+    pointer-events: auto;
+  }
+  .modal-sheet {
+    background: var(--surface);
+    border-radius: 32px 32px 0 0;
+    width: 100%;
+    padding: 20px 20px calc(20px + var(--safe-bottom));
+    transform: translateY(100%);
+    transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
+  }
+  .modal-overlay.open .modal-sheet { transform: translateY(0); }
+  .modal-handle {
+    width: 40px; height: 4px;
+    background: var(--surface3);
+    border-radius: 2px;
+    margin: 0 auto 18px;
+  }
+  .modal-title { font-family:'Syne',sans-serif; font-size:20px; font-weight:800; margin-bottom:6px; }
+  .modal-sub { font-size:13px; color:var(--text-muted); margin-bottom:20px; }
+
+  .scan-animation {
+    height: 160px;
+    background: var(--bg);
+    border-radius: var(--radius);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .scan-ring {
+    width: 72px; height: 72px;
+    border: 2px solid var(--wine-light);
+    border-radius: 50%;
+    position: relative;
+    animation: scan-pulse 1.5s ease-in-out infinite;
+  }
+  .scan-ring::after {
+    content:'';
+    position:absolute;
+    top:-12px; left:-12px; right:-12px; bottom:-12px;
+    border: 1px solid rgba(139,26,46,0.3);
+    border-radius: 50%;
+    animation: scan-pulse 1.5s ease-in-out infinite 0.3s;
+  }
+  @keyframes scan-pulse { 0%{transform:scale(0.8);opacity:0.5} 50%{transform:scale(1);opacity:1} 100%{transform:scale(0.8);opacity:0.5} }
+  .scan-icon { position:absolute; font-size:26px; }
+  .scan-label { position:absolute; bottom:12px; font-size:12px; color:var(--text-muted); }
+  .scan-wave {
+    position:absolute; width:100%; height:2px;
+    background: linear-gradient(90deg, transparent, var(--wine-light), transparent);
+    animation: scan-wave 2s linear infinite;
+    opacity: 0.6;
+  }
+  @keyframes scan-wave { from{top:20%} to{top:80%} }
+
+  .found-device {
+    background: var(--bg);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+    border: 1px solid var(--wine-glow);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .found-device:active { transform:scale(0.98); }
+  .found-device .fd-icon { font-size:22px; }
+  .found-device .fd-info h4 { font-size:14px; font-weight:600; }
+  .found-device .fd-info p { font-size:11px; color:var(--text-muted); }
+  .found-device .fd-signal { margin-left:auto; }
+  .signal-bar { font-size:12px; color:var(--wine-light); }
+
+  .btn-primary {
+    width:100%; padding:15px;
+    background: linear-gradient(135deg, var(--wine) 0%, #6d1524 100%);
+    border:none; border-radius: var(--radius-sm);
+    color:white; font-family:'Syne',sans-serif;
+    font-size:15px; font-weight:700;
+    cursor:pointer; transition:all 0.2s;
+    margin-top:8px;
+  }
+  .btn-primary:active { transform:scale(0.98); }
+  .btn-secondary {
+    width:100%; padding:13px;
+    background: var(--surface3);
+    border:none; border-radius: var(--radius-sm);
+    color: var(--text-muted);
+    font-size:14px; cursor:pointer;
+    margin-top:8px; transition:all 0.2s;
+  }
+
+  /* ── Data Page ───────────────────────────────────────────── */
+  .data-summary {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    margin: 0 16px 14px;
+  }
+  .data-chip {
+    background: var(--surface);
+    border-radius: var(--radius-sm);
+    padding: 12px 8px;
+    text-align: center;
+    border: 1px solid var(--border);
+    overflow: hidden;
+    min-width: 0;
+  }
+  .data-chip .dc-icon { font-size: 18px; margin-bottom: 4px; }
+  .data-chip .dc-val {
+    font-family:'Syne',sans-serif;
+    font-size: clamp(13px, 3.5vw, 16px);
+    font-weight: 800;
+    line-height: 1.1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+    display: block;
+  }
+  .data-chip .dc-unit { font-size: 9px; color: var(--text-muted); }
+  .data-chip .dc-label { font-size: 9px; color: var(--text-dim); margin-top: 2px; }
+
+  .chart-card {
+    margin: 0 16px 14px;
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 16px;
+    border: 1px solid var(--border);
+  }
+  .chart-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    gap: 8px;
+  }
+  .chart-header h3 { font-family:'Syne',sans-serif; font-size:15px; font-weight:700; }
+  .chart-header-right { text-align: right; flex-shrink: 0; max-width: 55%; }
+  .chart-header .ch-val {
+    font-family:'Syne',sans-serif;
+    font-size: clamp(16px, 4vw, 20px);
+    font-weight: 800;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+  }
+  .chart-header .ch-unit { font-size: 11px; color: var(--text-muted); white-space: nowrap; }
+
+  .mini-chart { width:100%; height:72px; }
+
+  .metric-list { margin: 0 16px 14px; }
+  .metric-row {
+    background: var(--surface);
+    border-radius: var(--radius-sm);
+    padding: 14px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border: 1px solid var(--border);
+  }
+  .metric-icon-box {
+    width: 40px; height: 40px;
+    border-radius: 11px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 19px;
+    flex-shrink: 0;
+  }
+  .metric-info { flex:1; min-width:0; }
+  .metric-info .mi-label { font-size:11px; color:var(--text-muted); }
+  .metric-info .mi-val { font-family:'Syne',sans-serif; font-size:clamp(13px,4vw,18px); font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .metric-info .mi-sub { font-size:11px; color:var(--text-dim); }
+  .metric-trend { font-size:13px; }
+
+  .bg-red-soft { background: rgba(139,26,46,0.15); }
+  .bg-green-soft { background: rgba(46,204,113,0.12); }
+  .bg-blue-soft { background: rgba(52,152,219,0.12); }
+  .bg-orange-soft { background: rgba(230,126,34,0.12); }
+  .bg-purple-soft { background: rgba(155,89,182,0.12); }
+
+  .steps-bars {
+    display: flex;
+    gap: 5px;
+    align-items: flex-end;
+    height: 56px;
+    padding: 0 2px;
+  }
+  .step-bar-wrap { flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; }
+  .step-bar {
+    flex: 1;
+    width: 100%;
+    border-radius: 4px 4px 0 0;
+    background: var(--surface3);
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.2s;
+    min-height: 6px;
+  }
+  .step-bar.today { background: linear-gradient(180deg, var(--wine-light), var(--wine)); }
+  .step-bar-label { font-size: 8px; color: var(--text-dim); }
+
+  .period-tabs {
+    display:flex; gap:6px;
+    margin: 0 16px 12px;
+    overflow-x:auto;
+    scrollbar-width:none;
+  }
+  .period-tabs::-webkit-scrollbar { display:none; }
+  .period-tab {
+    padding:6px 14px;
+    border-radius:20px;
+    font-size:12px; font-weight:600;
+    cursor:pointer;
+    border:none;
+    white-space:nowrap;
+    transition:all 0.2s;
+    background:var(--surface);
+    color:var(--text-muted);
+    -webkit-user-select: none; user-select: none;
+  }
+  .period-tab.active { background: var(--wine); color:white; }
+
+  /* ── First Aid Page ──────────────────────────────────────── */
+  .aid-categories {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin: 0 16px 14px;
+  }
+  .aid-cat {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 16px;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+    -webkit-user-select: none; user-select: none;
+  }
+  .aid-cat:active { transform:scale(0.97); }
+  .aid-cat .ac-icon { font-size:26px; margin-bottom:8px; }
+  .aid-cat .ac-title { font-family:'Syne',sans-serif; font-size:13px; font-weight:700; }
+  .aid-cat .ac-sub { font-size:11px; color:var(--text-muted); margin-top:2px; }
+  .aid-cat.urgent { border-color: rgba(139,26,46,0.4); }
+  .aid-cat.urgent::before {
+    content:'';
+    position:absolute; top:0; right:0;
+    width:5px; height:100%;
+    background: var(--wine);
+  }
+
+  .back-btn {
+    width:36px; height:36px;
+    background:var(--surface);
+    border:none; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer; font-size:16px; color:var(--text); flex-shrink:0;
+  }
+  .aid-step {
+    margin: 0 16px 10px;
+    background: var(--surface);
+    border-radius: var(--radius-sm);
+    padding: 14px;
+    display: flex;
+    gap: 12px;
+    border: 1px solid var(--border);
+  }
+  .step-num {
+    width: 30px; height: 30px; flex-shrink:0;
+    background: var(--wine);
+    border-radius: 50%;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Syne',sans-serif; font-size:12px; font-weight:800;
+  }
+  .step-content h4 { font-family:'Syne',sans-serif; font-size:14px; font-weight:700; margin-bottom:3px; }
+  .step-content p { font-size:12px; color:var(--text-muted); line-height:1.5; }
+
+  .emergency-banner {
+    margin: 12px 16px;
+    background: linear-gradient(135deg, var(--wine) 0%, #6d1524 100%);
+    border-radius: var(--radius);
+    padding: 16px;
+    display:flex; align-items:center; gap:12px;
+    cursor:pointer;
+    box-shadow: 0 4px 24px var(--wine-glow);
+    -webkit-user-select: none; user-select: none;
+  }
+  .emergency-banner .eb-icon { font-size:28px; }
+  .emergency-banner h3 { font-family:'Syne',sans-serif; font-size:16px; font-weight:800; }
+  .emergency-banner p { font-size:12px; opacity:0.75; margin-top:2px; }
+
+  /* ── Chat Page ───────────────────────────────────────────── */
+  #page-chat {
+    padding-bottom: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .chat-bubble {
+    max-width: 82%;
+    padding: 11px 14px;
+    border-radius: 18px;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .chat-bubble.bot {
+    background: var(--surface);
+    border-radius: 4px 18px 18px 18px;
+    border: 1px solid var(--border);
+    align-self: flex-start;
+  }
+  .chat-bubble.user {
+    background: linear-gradient(135deg, var(--wine) 0%, #6d1524 100%);
+    border-radius: 18px 18px 4px 18px;
+    align-self: flex-end;
+  }
+  .bot-avatar {
+    width: 30px; height: 30px;
+    background: linear-gradient(135deg, var(--wine) 0%, #6d1524 100%);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px;
+    flex-shrink: 0;
+  }
+  .bubble-group { display:flex; gap:8px; align-items:flex-end; }
+  .bubble-group.user { flex-direction:row-reverse; }
+  .bubble-group.user .bot-avatar { display:none; }
+
+  .chat-input {
+    flex:1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s;
+    -webkit-appearance: none;
+  }
+  .chat-input:focus { border-color: var(--wine-light); }
+  .chat-send {
+    width: 40px; height: 40px;
+    background: linear-gradient(135deg, var(--wine) 0%, #6d1524 100%);
+    border: none; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 16px;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+  .chat-send:active { transform:scale(0.9); }
+
+  .qq-chip {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 7px 12px;
+    font-size: 12px;
+    white-space: nowrap;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: all 0.2s;
+    -webkit-user-select: none; user-select: none;
+  }
+  .qq-chip:active { background: var(--wine-ultra); border-color: var(--wine-light); color:var(--wine-light); }
+
+  /* ── Profile Page ────────────────────────────────────────── */
+  .profile-avatar-area {
+    padding: 20px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap: 10px;
+  }
+  .avatar-ring {
+    width: 84px; height: 84px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--wine) 0%, #6d1524 100%);
+    display:flex; align-items:center; justify-content:center;
+    font-size: 38px;
+    box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--wine-light);
+    position: relative;
+  }
+  .edit-avatar {
+    position:absolute; bottom:0; right:0;
+    width:24px; height:24px;
+    background: var(--wine-light);
+    border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:11px; cursor:pointer;
+    border: 2px solid var(--bg);
+  }
+  .profile-name { font-family:'Syne',sans-serif; font-size:clamp(18px,5vw,22px); font-weight:800; }
+  .profile-id { font-size:12px; color:var(--text-muted); }
+
+  .profile-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    margin: 0 16px 14px;
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 14px;
+    border: 1px solid var(--border);
+  }
+  .pstat { text-align:center; }
+  .pstat .ps-val { font-family:'Syne',sans-serif; font-size:clamp(17px,4.5vw,22px); font-weight:800; }
+  .pstat .ps-label { font-size:10px; color:var(--text-muted); margin-top:2px; }
+  .pstat-divider { width:1px; background: var(--border); }
+
+  .profile-section { margin: 0 16px 14px; }
+  .profile-section h3 { font-family:'Syne',sans-serif; font-size:12px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px; }
+
+  .profile-row {
+    background: var(--surface);
+    border-radius: var(--radius-sm);
+    padding: 13px 14px;
+    display:flex; align-items:center; gap:12px;
+    margin-bottom:8px;
+    border: 1px solid var(--border);
+    cursor:pointer; transition:all 0.2s;
+    -webkit-user-select: none; user-select: none;
+  }
+  .profile-row:active { transform:scale(0.98); }
+  .pr-icon { font-size:18px; width:20px; text-align:center; }
+  .pr-info { flex:1; }
+  .pr-info .pri-label { font-size:13px; font-weight:500; }
+  .pr-info .pri-val { font-size:11px; color:var(--text-muted); }
+  .pr-arrow { color:var(--text-dim); font-size:12px; }
+
+  .toggle-switch {
+    width: 44px; height: 24px;
+    background: var(--surface3);
+    border-radius: 12px;
+    position:relative;
+    cursor:pointer;
+    transition:background 0.3s;
+    flex-shrink:0;
+  }
+  .toggle-switch.on { background: var(--wine); }
+  .toggle-switch::after {
+    content:'';
+    position:absolute;
+    top:3px; left:3px;
+    width:18px; height:18px;
+    background:white;
+    border-radius:50%;
+    transition:transform 0.3s;
+  }
+  .toggle-switch.on::after { transform:translateX(20px); }
+
+  .health-info-grid {
+    display:grid; grid-template-columns:1fr 1fr;
+    gap:8px;
+  }
+  .hi-cell {
+    background: var(--surface);
+    border-radius: var(--radius-sm);
+    padding:13px;
+    border:1px solid var(--border);
+  }
+  .hi-cell .hic-label { font-size:10px; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.3px; }
+  .hi-cell .hic-val { font-family:'Syne',sans-serif; font-size:16px; font-weight:700; margin-top:3px; }
+
+  .notif-badge {
+    position:absolute;
+    top:-4px; right:-4px;
+    width:15px; height:15px;
+    background: var(--wine-light);
+    border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:9px; font-weight:700;
+    border: 2px solid var(--bg);
+  }
+
+  /* ── Tip Card ────────────────────────────────────────────── */
+  #tip-card {
+    margin: 0 16px 4px;
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.15s;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    -webkit-user-select: none; user-select: none;
+  }
+  #tip-card:active { transform: scale(0.98); }
+  #tip-dots { display:flex; justify-content:center; gap:5px; margin:5px 0 8px; }
+
+  /* ── Overlays ────────────────────────────────────────────── */
+  #goals-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: var(--bg);
+    z-index: 160;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateX(100%);
+    transition: opacity 0.35s cubic-bezier(0.4,0,0.2,1), transform 0.35s cubic-bezier(0.4,0,0.2,1);
+    will-change: transform, opacity;
+  }
+
+  #aid-detail {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: var(--bg);
+    z-index: 150;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateX(100%);
+    transition: opacity 0.38s cubic-bezier(0.4,0,0.2,1), transform 0.38s cubic-bezier(0.4,0,0.2,1);
+    will-change: transform, opacity;
+  }
+
+  .overlay-header {
+    flex-shrink: 0;
+    padding: calc(var(--safe-top) + 16px) 20px 14px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  #notruf-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0);
+    z-index: 300;
+    pointer-events: none;
+    transition: background 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #notruf-card {
+    background: #0f0f12;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    transform: translateY(100%);
+    transition: transform 0.4s cubic-bezier(0.4,0,0.2,1);
+    position: relative;
+    overflow: hidden;
+  }
+
+  #sos-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 250;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.35s ease;
+  }
+
+  /* ── Animations ──────────────────────────────────────────── */
+  @keyframes sos-border-pulse {
+    0%  { box-shadow: inset 0 0 0 0 rgba(176,34,64,0); border-color: rgba(176,34,64,0); }
+    50% { box-shadow: inset 0 0 30px 0 rgba(176,34,64,0.15); border-color: rgba(176,34,64,0.8); }
+    100%{ box-shadow: inset 0 0 0 0 rgba(176,34,64,0); border-color: rgba(176,34,64,0); }
+  }
+  @keyframes sos-shake {
+    from { transform: rotate(-8deg) scale(1.05); }
+    to   { transform: rotate(8deg) scale(1.1); }
+  }
+  @keyframes notruf-glow {
+    0%,100%{transform:scale(1);opacity:0.7}
+    50%{transform:scale(1.15);opacity:1}
+  }
+  @keyframes dot-bounce {
+    0%,80%,100%{transform:translateY(0)}
+    40%{transform:translateY(-8px)}
+  }
+
+  /* ── Install Banner ──────────────────────────────────────── */
+  #install-banner {
+    position: fixed;
+    bottom: calc(var(--nav-height) + 12px);
+    left: 16px; right: 16px;
+    background: var(--surface);
+    border: 1px solid var(--wine-glow);
+    border-radius: 16px;
+    padding: 14px 16px;
+    display: none;
+    align-items: center;
+    gap: 12px;
+    z-index: 180;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    animation: slideUp 0.3s cubic-bezier(0.34,1.3,0.64,1);
+  }
+  @keyframes slideUp { from{transform:translateY(20px);opacity:0} to{transform:translateY(0);opacity:1} }
+  #install-banner.visible { display: flex; }
+
+  /* ── Offline indicator ───────────────────────────────────── */
+  #offline-bar {
+    position: fixed;
+    top: var(--safe-top);
+    left: 0; right: 0;
+    background: var(--orange);
+    color: white;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px;
+    z-index: 999;
+    transform: translateY(-100%);
+    transition: transform 0.3s ease;
+  }
+  #offline-bar.visible { transform: translateY(0); }
+
+  /* ── Responsive: wider screens ───────────────────────────── */
+  @media (min-width: 600px) {
+    #app {
+      max-width: 480px;
+      margin: 0 auto;
+    }
+    body {
+      background: #111114;
+      display: flex;
+      justify-content: center;
+    }
+  }
+
+  /* ── iOS keyboard fix ────────────────────────────────────── */
+  @supports (-webkit-touch-callout: none) {
+    body { height: -webkit-fill-available; }
+    #app { height: -webkit-fill-available; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Offline indicator -->
+<div id="offline-bar">📵 Kein Internet — Offline-Modus aktiv</div>
+
+<div id="app">
+  <div class="pages" id="pages">
+
+    <!-- HOME PAGE -->
+    <div class="page active" id="page-home">
+      <div class="page-header">
+        <h1>Fall<span class="wine-text">Guard</span></h1>
+        <p>Deine Gesundheit im Blick</p>
+      </div>
+
+      <div class="home-hero">
+        <div class="hero-label">⚡ Live Status</div>
+        <div class="hero-title" id="hero-greeting">Guten Morgen, Max</div>
+        <div class="hero-sub">Alle Geräte verbunden & aktiv</div>
+        <div class="hero-status">
+          <div class="status-dot"></div>
+          <span class="status-text">FallGuard Band II • Verbunden</span>
+        </div>
+      </div>
+
+      <div id="tip-card" onclick="nextTip()">
+        <div id="tip-accent" style="position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--wine-light);border-radius:4px 0 0 4px;transition:background 0.5s ease;"></div>
+        <div id="tip-icon" style="font-size:26px;flex-shrink:0;margin-left:6px;transition:transform 0.3s ease;">💡</div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
+            <span id="tip-label" style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--wine-light);transition:color 0.5s ease;">FallGuard Tipp</span>
+            <span style="font-size:9px;color:var(--text-dim)" id="tip-time-label"></span>
+          </div>
+          <div id="tip-text" style="font-size:13px;line-height:1.45;color:var(--text);font-weight:500;">Lade Tipp…</div>
+        </div>
+        <div style="color:var(--text-dim);font-size:14px;flex-shrink:0">›</div>
+      </div>
+      <div id="tip-dots"></div>
+
+      <div class="section-title">Heute</div>
+      <div class="quick-stats">
+        <div class="stat-mini" onclick="switchPage('data')" style="-webkit-user-select:none;user-select:none">
+          <div class="s-icon">👣</div>
+          <div><span class="s-val" id="home-steps">6.482</span><span class="s-unit">Schr.</span></div>
+          <div class="s-label">Schritte</div>
+        </div>
+        <div class="stat-mini" onclick="switchPage('data')" style="-webkit-user-select:none;user-select:none">
+          <div class="s-icon">❤️</div>
+          <div><span class="s-val" id="home-hr">72</span><span class="s-unit">bpm</span></div>
+          <div class="s-label">Herzrate</div>
+        </div>
+        <div class="stat-mini" onclick="switchPage('data')" style="-webkit-user-select:none;user-select:none">
+          <div class="s-icon">🩸</div>
+          <div><span class="s-val" id="home-spo2">97</span><span class="s-unit">%</span></div>
+          <div class="s-label">SpO₂</div>
+        </div>
+        <div class="stat-mini" onclick="switchPage('data')" style="-webkit-user-select:none;user-select:none">
+          <div class="s-icon">🔥</div>
+          <div><span class="s-val" id="home-kcal">1.248</span><span class="s-unit">kcal</span></div>
+          <div class="s-label">Kalorien</div>
+        </div>
+      </div>
+
+      <div class="section-title">Geräte</div>
+
+      <button onclick="openScanModal()" style="
+        margin:0 16px 10px;
+        display:flex;align-items:center;gap:14px;
+        width:calc(100% - 32px);
+        background:linear-gradient(135deg,var(--wine) 0%,#6d1524 100%);
+        border:none;border-radius:20px;
+        padding:16px;
+        color:white;cursor:pointer;
+        box-shadow:0 4px 24px var(--wine-glow);
+        transition:all 0.2s;
+      ">
+        <div style="width:44px;height:44px;background:rgba(255,255,255,0.15);border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">＋</div>
+        <div style="text-align:left;">
+          <div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700;">Gerät hinzufügen</div>
+          <div style="font-size:12px;opacity:0.75;margin-top:2px;">Nach neuen Geräten suchen</div>
+        </div>
+        <span style="margin-left:auto;font-size:18px;opacity:0.5;">›</span>
+      </button>
+
+      <div class="device-card" onclick="switchPage('data')">
+        <div class="device-icon">⌚</div>
+        <div class="device-info">
+          <h3>FallGuard Band II</h3>
+          <p>Verbunden • Bluetooth LE</p>
+        </div>
+        <div class="device-battery">
+          <span class="battery-val">84%</span>
+          <span class="battery-label">Akku</span>
+        </div>
+      </div>
+      <div class="device-card" onclick="switchPage('data')">
+        <div class="device-icon">💍</div>
+        <div class="device-info">
+          <h3>FallGuard Ring</h3>
+          <p>Verbunden • Bluetooth LE</p>
+        </div>
+        <div class="device-battery">
+          <span class="battery-val" style="color:var(--orange)">31%</span>
+          <span class="battery-label">Akku</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- DATA PAGE -->
+    <div class="page" id="page-data">
+      <div class="page-header">
+        <h1>Meine <span class="wine-text">Daten</span></h1>
+        <p id="data-period-label">Gesundheitsübersicht · Heute</p>
+      </div>
+
+      <div class="period-tabs">
+        <button class="period-tab active" onclick="switchDataTab(this,'today')">Heute</button>
+        <button class="period-tab" onclick="switchDataTab(this,'week')">Woche</button>
+        <button class="period-tab" onclick="switchDataTab(this,'month')">Monat</button>
+        <button class="period-tab" onclick="switchDataTab(this,'year')">Jahr</button>
+      </div>
+
+      <div class="data-summary">
+        <div class="data-chip">
+          <div class="dc-icon">👣</div>
+          <div class="dc-val" id="chip-steps">6.482</div>
+          <div class="dc-unit">Schritte</div>
+          <div class="dc-label" id="chip-steps-trend">↑ 12%</div>
+        </div>
+        <div class="data-chip">
+          <div class="dc-icon">🔥</div>
+          <div class="dc-val" id="chip-kcal">1.248</div>
+          <div class="dc-unit">kcal</div>
+          <div class="dc-label" id="chip-kcal-trend">↑ 5%</div>
+        </div>
+        <div class="data-chip">
+          <div class="dc-icon">😴</div>
+          <div class="dc-val" id="chip-sleep">7.2</div>
+          <div class="dc-unit">Std.</div>
+          <div class="dc-label" id="chip-sleep-trend">Schlaf</div>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-header">
+          <div>
+            <h3>Schritte</h3>
+            <div id="steps-chart-label" style="font-size:11px;color:var(--text-muted)">Heute</div>
+          </div>
+          <div class="chart-header-right">
+            <span class="ch-val" id="steps-val">6.482</span>
+            <span class="ch-unit" id="steps-goal"> / 10.000</span>
+          </div>
+        </div>
+        <div class="steps-bars" id="steps-bars-container"></div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-header">
+          <div><h3>Herzrate</h3><div id="hr-chart-label" style="font-size:11px;color:var(--text-muted)">Heute</div></div>
+          <div class="chart-header-right"><span class="ch-val" id="hr-val">72</span><span class="ch-unit"> bpm</span></div>
+        </div>
+        <svg class="mini-chart" id="hr-svg" viewBox="0 0 300 80" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="hrGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#8b1a2e" stop-opacity="0.4"/>
+              <stop offset="100%" stop-color="#8b1a2e" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <path id="hr-line" d="" fill="none" stroke="#b02240" stroke-width="2.5" stroke-linecap="round"/>
+          <path id="hr-fill" d="" fill="url(#hrGrad)"/>
+        </svg>
+        <div style="display:flex;justify-content:space-between;margin-top:5px">
+          <span style="font-size:10px;color:var(--text-dim)" id="hr-min">Min: 56 bpm</span>
+          <span style="font-size:10px;color:var(--text-dim)" id="hr-max">Max: 124 bpm</span>
+        </div>
+      </div>
+
+      <div class="section-title">Alle Messwerte</div>
+      <div class="metric-list" id="metrics-list"></div>
+    </div>
+
+    <!-- FIRST AID PAGE -->
+    <div class="page" id="page-aid">
+      <div class="page-header">
+        <h1>Erste <span class="wine-text">Hilfe</span></h1>
+        <p>Schnell & zuverlässig</p>
+      </div>
+
+      <div class="emergency-banner" onclick="triggerNotruf()">
+        <div class="eb-icon">🚨</div>
+        <div>
+          <h3>Notruf 112</h3>
+          <p>Im Ernstfall sofort anrufen</p>
+        </div>
+        <span style="margin-left:auto;font-size:22px">›</span>
+      </div>
+
+      <div class="section-title">Die 5 Glieder der Rettungskette</div>
+      <div class="chart-card" style="margin-bottom:14px">
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;align-items:center;gap:12px">
+            <div style="width:30px;height:30px;background:var(--wine);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:12px;font-weight:800;flex-shrink:0">1</div>
+            <div><div style="font-size:13px;font-weight:600">Absichern & Eigenschutz</div><div style="font-size:11px;color:var(--text-muted)">Unfallstelle sichern, Warnblinker an</div></div>
+          </div>
+          <div style="width:2px;height:8px;background:var(--border);margin-left:14px"></div>
+          <div style="display:flex;align-items:center;gap:12px">
+            <div style="width:30px;height:30px;background:var(--wine);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:12px;font-weight:800;flex-shrink:0">2</div>
+            <div><div style="font-size:13px;font-weight:600">Notruf & Sofortmaßnahmen</div><div style="font-size:11px;color:var(--text-muted)">112 anrufen, stabile Seitenlage</div></div>
+          </div>
+          <div style="width:2px;height:8px;background:var(--border);margin-left:14px"></div>
+          <div style="display:flex;align-items:center;gap:12px">
+            <div style="width:30px;height:30px;background:var(--wine);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:12px;font-weight:800;flex-shrink:0">3</div>
+            <div><div style="font-size:13px;font-weight:600">Weitere Erste Hilfe</div><div style="font-size:11px;color:var(--text-muted)">Versorgung bis zum Rettungsdienst</div></div>
+          </div>
+          <div style="width:2px;height:8px;background:var(--border);margin-left:14px"></div>
+          <div style="display:flex;align-items:center;gap:12px">
+            <div style="width:30px;height:30px;background:var(--surface3);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:12px;font-weight:800;flex-shrink:0">4</div>
+            <div><div style="font-size:13px;font-weight:600;color:var(--text-muted)">Rettungsdienst</div><div style="font-size:11px;color:var(--text-dim)">Profis übernehmen</div></div>
+          </div>
+          <div style="width:2px;height:8px;background:var(--border);margin-left:14px"></div>
+          <div style="display:flex;align-items:center;gap:12px">
+            <div style="width:30px;height:30px;background:var(--surface3);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:12px;font-weight:800;flex-shrink:0">5</div>
+            <div><div style="font-size:13px;font-weight:600;color:var(--text-muted)">Krankenhaus</div><div style="font-size:11px;color:var(--text-dim)">Medizinische Versorgung</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title">Notfallsituationen</div>
+      <div class="aid-categories">
+        <div class="aid-cat urgent" onclick="openAid('herzstillstand')">
+          <div class="ac-icon">💓</div>
+          <div class="ac-title">Herzstillstand</div>
+          <div class="ac-sub">HLW & AED</div>
+        </div>
+        <div class="aid-cat urgent" onclick="openAid('bewusstlos')">
+          <div class="ac-icon">😵</div>
+          <div class="ac-title">Bewusstlosigkeit</div>
+          <div class="ac-sub">Stabile Seitenlage</div>
+        </div>
+        <div class="aid-cat" onclick="openAid('blutung')">
+          <div class="ac-icon">🩹</div>
+          <div class="ac-title">Blutungen</div>
+          <div class="ac-sub">Stillen & Verbinden</div>
+        </div>
+        <div class="aid-cat" onclick="openAid('schlaganfall')">
+          <div class="ac-icon">🧠</div>
+          <div class="ac-title">Schlaganfall</div>
+          <div class="ac-sub">FAST-Test</div>
+        </div>
+        <div class="aid-cat" onclick="openAid('sturz')">
+          <div class="ac-icon">🦴</div>
+          <div class="ac-title">Sturz & Bruch</div>
+          <div class="ac-sub">Ruhigstellen</div>
+        </div>
+        <div class="aid-cat" onclick="openAid('verbrennung')">
+          <div class="ac-icon">🔥</div>
+          <div class="ac-title">Verbrennung</div>
+          <div class="ac-sub">Kühlen & Schützen</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CHATBOT PAGE -->
+    <div class="page" id="page-chat">
+      <div class="page-header" style="padding-bottom:10px;flex-shrink:0">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div>
+            <h1>Fall<span class="wine-text">Bot</span></h1>
+            <p>Dein KI-Gesundheitsassistent</p>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-muted)">
+              <div style="width:7px;height:7px;background:var(--green);border-radius:50%;box-shadow:0 0 6px var(--green);animation:pulse-dot 2s infinite"></div>
+              Online
+            </div>
+            <button onclick="resetChat()" style="
+              width:34px;height:34px;
+              background:var(--surface);
+              border:1px solid var(--border);
+              border-radius:50%;
+              display:flex;align-items:center;justify-content:center;
+              cursor:pointer;font-size:15px;
+              color:var(--text-muted);
+              transition:all 0.2s;
+            ">↺</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="chat-suggestions" style="padding:0 16px 8px;display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;flex-shrink:0">
+        <div class="qq-chip" onclick="sendQuickMsg('Ich bin hingefallen und habe Schmerzen.')">🚨 Sturz melden</div>
+        <div class="qq-chip" onclick="sendQuickMsg('Wie ist mein Gesundheitsstatus heute?')">📊 Status heute</div>
+        <div class="qq-chip" onclick="sendQuickMsg('Was bedeutet mein Puls von 72 bpm?')">❤️ Puls erklären</div>
+        <div class="qq-chip" onclick="sendQuickMsg('Gib mir Tipps für besseren Schlaf.')">😴 Schlaftipps</div>
+        <div class="qq-chip" onclick="sendQuickMsg('Was tun bei einem Herzstillstand?')">🆘 Erste Hilfe</div>
+      </div>
+
+      <div id="chat-messages" style="
+        flex:1;overflow-y:auto;overflow-x:hidden;
+        padding:6px 16px 10px;
+        display:flex;flex-direction:column;gap:10px;
+        scrollbar-width:none;
+      ">
+        <div class="bubble-group bot">
+          <div class="bot-avatar">🤖</div>
+          <div class="chat-bubble bot">Hallo! Ich bin <strong>FallBot</strong>, dein persönlicher KI-Gesundheitsassistent. 💙<br><br>Ich kenne deine aktuellen Gesundheitsdaten:<br>❤️ Puls: <strong>72 bpm</strong> · 🩸 SpO₂: <strong>97%</strong> · 👣 Schritte: <strong>6.482</strong><br><br>Wie kann ich dir helfen?</div>
+        </div>
+      </div>
+
+      <div id="typing-indicator" style="display:none;padding:0 16px 6px;flex-shrink:0;">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="bot-avatar">🤖</div>
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:4px 18px 18px 18px;padding:10px 14px;display:flex;gap:5px;align-items:center">
+            <div style="width:7px;height:7px;background:var(--wine-light);border-radius:50%;animation:dot-bounce 1.2s ease-in-out infinite 0s"></div>
+            <div style="width:7px;height:7px;background:var(--wine-light);border-radius:50%;animation:dot-bounce 1.2s ease-in-out infinite 0.2s"></div>
+            <div style="width:7px;height:7px;background:var(--wine-light);border-radius:50%;animation:dot-bounce 1.2s ease-in-out infinite 0.4s"></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="padding:8px 16px;padding-bottom:calc(8px + var(--safe-bottom));background:var(--surface);border-top:1px solid var(--border);display:flex;gap:10px;align-items:center;flex-shrink:0;">
+        <input
+          id="chat-input"
+          class="chat-input"
+          type="text"
+          placeholder="Nachricht an FallBot…"
+          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChatMessage()}"
+        >
+        <button class="chat-send" id="chat-send-btn" onclick="sendChatMessage()">
+          <span id="send-icon">➤</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- PROFILE PAGE -->
+    <div class="page" id="page-profile">
+      <div class="page-header">
+        <h1>Mein <span class="wine-text">Profil</span></h1>
+        <p>Einstellungen & Gesundheitsakte</p>
+      </div>
+
+      <div class="profile-avatar-area">
+        <div class="avatar-ring">
+          👤
+          <div class="edit-avatar">✏️</div>
+        </div>
+        <div class="profile-name">Max Mustermann</div>
+        <div class="profile-id">FallGuard ID: FG-2024-4821</div>
+      </div>
+
+      <div class="profile-stats">
+        <div class="pstat">
+          <div class="ps-val">247</div>
+          <div class="ps-label">Tage aktiv</div>
+        </div>
+        <div class="pstat-divider"></div>
+        <div class="pstat">
+          <div class="ps-val">2</div>
+          <div class="ps-label">Geräte</div>
+        </div>
+        <div class="pstat-divider"></div>
+        <div class="pstat">
+          <div class="ps-val" style="color:var(--green)">98%</div>
+          <div class="ps-label">Gesund</div>
+        </div>
+      </div>
+
+      <div class="profile-section">
+        <h3>Gesundheitsdaten</h3>
+        <div class="health-info-grid">
+          <div class="hi-cell"><div class="hic-label">Alter</div><div class="hic-val">34 Jahre</div></div>
+          <div class="hi-cell"><div class="hic-label">Blutgruppe</div><div class="hic-val">A+</div></div>
+          <div class="hi-cell"><div class="hic-label">Größe</div><div class="hic-val">181 cm</div></div>
+          <div class="hi-cell"><div class="hic-label">Gewicht</div><div class="hic-val">78 kg</div></div>
+          <div class="hi-cell"><div class="hic-label">BMI</div><div class="hic-val">23.8</div></div>
+          <div class="hi-cell"><div class="hic-label">Allergien</div><div class="hic-val">Keine</div></div>
+        </div>
+      </div>
+
+      <div class="profile-section">
+        <h3>Tagesziele</h3>
+        <div id="goals-list"></div>
+        <div class="profile-row" onclick="openGoals()" style="border-color:rgba(176,34,64,0.3);margin-top:4px">
+          <span class="pr-icon">🎯</span>
+          <div class="pr-info">
+            <div class="pri-label" style="color:var(--wine-light)">Ziele anpassen</div>
+            <div class="pri-val">Alle Tagesziele bearbeiten</div>
+          </div>
+          <span class="pr-arrow" style="color:var(--wine-light)">›</span>
+        </div>
+      </div>
+
+      <div class="profile-section">
+        <h3>Einstellungen</h3>
+        <div class="profile-row" onclick="toggleDarkMode()">
+          <span class="pr-icon" id="theme-icon">🌙</span>
+          <div class="pr-info">
+            <div class="pri-label" id="theme-label">Dark Mode</div>
+            <div class="pri-val" id="theme-val">Aktuell aktiv</div>
+          </div>
+          <div class="toggle-switch on" id="theme-toggle" onclick="event.stopPropagation();toggleDarkMode()"></div>
+        </div>
+        <div class="profile-row" onclick="toggleRow(this)">
+          <span class="pr-icon">🔔</span>
+          <div class="pr-info">
+            <div class="pri-label">Benachrichtigungen</div>
+            <div class="pri-val">Gesundheitsalarme aktiv</div>
+          </div>
+          <div class="toggle-switch on" onclick="event.stopPropagation();toggleSwitch(this)"></div>
+        </div>
+        <div class="profile-row">
+          <span class="pr-icon">🔒</span>
+          <div class="pr-info">
+            <div class="pri-label">Datenschutz</div>
+            <div class="pri-val">Ende-zu-Ende verschlüsselt</div>
+          </div>
+          <span class="pr-arrow">›</span>
+        </div>
+        <div class="profile-row" onclick="toggleRow(this)">
+          <span class="pr-icon">🆘</span>
+          <div class="pr-info">
+            <div class="pri-label">SOS-Erkennung</div>
+            <div class="pri-val">Sturzerkennung aktiv</div>
+          </div>
+          <div class="toggle-switch on" onclick="event.stopPropagation();toggleSwitch(this)"></div>
+        </div>
+        <div class="profile-row">
+          <span class="pr-icon">📱</span>
+          <div class="pr-info">
+            <div class="pri-label">Notfallkontakt</div>
+            <div class="pri-val">Anna Mustermann • +49 151 xxxxxx</div>
+          </div>
+          <span class="pr-arrow">›</span>
+        </div>
+        <div class="profile-row">
+          <span class="pr-icon">🏥</span>
+          <div class="pr-info">
+            <div class="pri-label">Hausarzt</div>
+            <div class="pri-val">Dr. Schmidt, Pforzheim</div>
+          </div>
+          <span class="pr-arrow">›</span>
+        </div>
+        <div class="profile-row">
+          <span class="pr-icon">📤</span>
+          <div class="pr-info">
+            <div class="pri-label">Daten exportieren</div>
+            <div class="pri-val">PDF / CSV Bericht</div>
+          </div>
+          <span class="pr-arrow">›</span>
+        </div>
+        <div class="profile-row" onclick="showApiKeyPrompt()" style="border-color:rgba(176,34,64,0.25)">
+          <span class="pr-icon">🔑</span>
+          <div class="pr-info">
+            <div class="pri-label" style="color:var(--wine-light)">FallBot API-Key</div>
+            <div class="pri-val" id="apikey-status">Tippe zum Einrichten</div>
+          </div>
+          <span class="pr-arrow" style="color:var(--wine-light)">›</span>
+        </div>
+        <div class="profile-row" style="border-color:rgba(139,26,46,0.3)">
+          <span class="pr-icon">🚪</span>
+          <div class="pr-info">
+            <div class="pri-label" style="color:var(--wine-light)">Abmelden</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /pages -->
+
+  <!-- TAGESZIELE OVERLAY -->
+  <div id="goals-overlay">
+    <div class="overlay-header">
+      <button onclick="closeGoals()" style="width:40px;height:40px;background:var(--surface);border:1px solid var(--border);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;color:var(--text);flex-shrink:0;">←</button>
+      <div>
+        <h2 style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800">Tagesziele</h2>
+        <p style="font-size:12px;color:var(--text-muted);margin-top:2px">Passe deine persönlichen Ziele an</p>
+      </div>
+    </div>
+    <div id="goals-editor" style="flex:1;overflow-y:auto;padding:18px 16px 28px;scrollbar-width:none;"></div>
+    <div style="padding:10px 16px;padding-bottom:calc(10px + var(--safe-bottom));flex-shrink:0;background:var(--bg);border-top:1px solid var(--border)">
+      <button onclick="saveGoals()" style="width:100%;padding:15px;background:linear-gradient(135deg,var(--wine) 0%,#6d1524 100%);border:none;border-radius:14px;color:#fff;font-family:'Syne',sans-serif;font-size:16px;font-weight:800;cursor:pointer;box-shadow:0 4px 20px var(--wine-glow);">
+        ✓ Ziele speichern
+      </button>
+    </div>
+  </div>
+
+  <!-- AID DETAIL OVERLAY -->
+  <div id="aid-detail">
+    <div class="overlay-header">
+      <button onclick="closeAid()" style="width:40px;height:40px;background:var(--surface);border:1px solid var(--border);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;color:var(--text);flex-shrink:0;">←</button>
+      <div style="flex:1">
+        <h2 id="aid-title" style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;line-height:1.2"></h2>
+        <p id="aid-sub" style="font-size:12px;color:var(--text-muted);margin-top:2px"></p>
+      </div>
+    </div>
+    <div id="aid-steps-container" style="flex:1;overflow-y:auto;padding:18px 0 28px;scrollbar-width:none;"></div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <div class="bottom-nav">
+    <div class="nav-item" onclick="switchPage('profile')" id="nav-profile">
+      <div class="nav-icon" style="position:relative">👤</div>
+      <span class="nav-label">Profil</span>
+    </div>
+    <div class="nav-item" onclick="switchPage('data')" id="nav-data">
+      <div class="nav-icon">📊</div>
+      <span class="nav-label">Daten</span>
+    </div>
+    <div class="nav-item active" onclick="switchPage('home')" id="nav-home">
+      <div class="nav-icon">🏠</div>
+      <span class="nav-label">Home</span>
+    </div>
+    <div class="nav-item" onclick="switchPage('aid')" id="nav-aid">
+      <div class="nav-icon" style="position:relative">🆘<div class="notif-badge">!</div></div>
+      <span class="nav-label">Erste Hilfe</span>
+    </div>
+    <div class="nav-item" onclick="switchPage('chat')" id="nav-chat">
+      <div class="nav-icon">💬</div>
+      <span class="nav-label">FallBot</span>
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<!-- SCAN MODAL -->
+<div class="modal-overlay" id="scan-modal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Gerät hinzufügen</div>
+    <div class="modal-sub">Stellen Sie sicher, dass Ihr Gerät eingeschaltet und in der Nähe ist</div>
+    <div class="scan-animation" id="scan-anim">
+      <div class="scan-wave"></div>
+      <div class="scan-ring"><span class="scan-icon">⌚</span></div>
+      <span class="scan-label" id="scan-status-text">Suche nach Geräten…</span>
+    </div>
+    <div id="found-devices" style="display:none">
+      <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px">Gefundene Geräte</div>
+      <div class="found-device" onclick="pairDevice('FallGuard Band III')">
+        <span class="fd-icon">⌚</span>
+        <div class="fd-info"><h4>FallGuard Band III</h4><p>Bluetooth LE • Stärke: Stark</p></div>
+        <span class="fd-signal">●●●</span>
+      </div>
+      <div class="found-device" onclick="pairDevice('FallGuard Ring Pro')">
+        <span class="fd-icon">💍</span>
+        <div class="fd-info"><h4>FallGuard Ring Pro</h4><p>Bluetooth LE • Stärke: Gut</p></div>
+        <span class="fd-signal">●●○</span>
+      </div>
+      <button class="btn-primary" onclick="closeScanModal()">Verbinden</button>
+    </div>
+    <button class="btn-secondary" onclick="closeScanModal()">Abbrechen</button>
+  </div>
+</div>
+
+<!-- NOTRUF MODAL -->
+<div id="notruf-overlay">
+  <div id="notruf-card">
+    <div style="position:absolute;width:300px;height:300px;background:radial-gradient(circle,rgba(139,26,46,0.35) 0%,transparent 70%);border-radius:50%;animation:notruf-glow 1.5s ease-in-out infinite;pointer-events:none;"></div>
+    <div id="notruf-status-label" style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#b02240;font-weight:700;margin-bottom:32px;opacity:0;transition:opacity 0.4s ease 0.3s;">Verbinde mit Notruf</div>
+    <div style="position:relative;margin-bottom:36px;">
+      <div id="notruf-ring1" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);width:160px;height:160px;border:1px solid rgba(139,26,46,0.4);border-radius:50%;transition:transform 0.5s ease,opacity 0.5s ease;opacity:0;"></div>
+      <div id="notruf-ring2" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);width:200px;height:200px;border:1px solid rgba(139,26,46,0.2);border-radius:50%;transition:transform 0.5s ease 0.1s,opacity 0.5s ease 0.1s;opacity:0;"></div>
+      <div id="notruf-btn-circle" style="width:110px;height:110px;background:linear-gradient(135deg,#8b1a2e 0%,#6d1524 100%);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:44px;box-shadow:0 0 40px rgba(139,26,46,0.5);transform:scale(0);transition:transform 0.4s cubic-bezier(0.34,1.56,0.64,1) 0.15s;position:relative;z-index:2;">📞</div>
+    </div>
+    <div id="notruf-number" style="font-family:'Syne',sans-serif;font-size:52px;font-weight:800;letter-spacing:4px;color:#fff;opacity:0;transform:translateY(12px);transition:opacity 0.4s ease 0.4s,transform 0.4s ease 0.4s;">112</div>
+    <div id="notruf-connecting" style="display:flex;gap:8px;margin-top:14px;opacity:0;transition:opacity 0.3s ease 0.6s;">
+      <div style="width:7px;height:7px;background:#8b1a2e;border-radius:50%;animation:dot-bounce 1.2s ease-in-out infinite 0s"></div>
+      <div style="width:7px;height:7px;background:#8b1a2e;border-radius:50%;animation:dot-bounce 1.2s ease-in-out infinite 0.2s"></div>
+      <div style="width:7px;height:7px;background:#8b1a2e;border-radius:50%;animation:dot-bounce 1.2s ease-in-out infinite 0.4s"></div>
+    </div>
+    <div id="notruf-connected" style="opacity:0;text-align:center;margin-top:16px;transition:opacity 0.5s ease;">
+      <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:#2ecc71;">✓ Notruf verbunden</div>
+      <div style="font-size:12px;color:#8a8a95;margin-top:4px;">Rettungsdienst ist benachrichtigt</div>
+      <div id="notruf-timer" style="font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:#fff;margin-top:10px;">0:00</div>
+    </div>
+    <button onclick="cancelNotruf()" id="notruf-cancel-btn" style="
+      position:absolute;bottom:calc(40px + var(--safe-bottom));
+      background:rgba(255,255,255,0.08);
+      border:1px solid rgba(255,255,255,0.12);
+      border-radius:30px;
+      padding:14px 40px;
+      color:#f0f0f3;font-size:15px;
+      font-family:'DM Sans',sans-serif;font-weight:500;
+      cursor:pointer;
+      opacity:0;transform:translateY(10px);
+      transition:opacity 0.4s ease 0.5s,transform 0.4s ease 0.5s;
+    ">Auflegen</button>
+  </div>
+</div>
+
+<!-- SOS OVERLAY -->
+<div id="sos-overlay">
+  <div id="sos-bg" style="position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(180deg,#1a0508 0%,#0f0306 100%);"></div>
+  <div style="position:absolute;top:0;left:0;right:0;bottom:0;border:3px solid rgba(176,34,64,0);animation:sos-border-pulse 1s ease-in-out infinite;pointer-events:none;"></div>
+  <div style="position:absolute;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;gap:0;padding-top:calc(32px + var(--safe-top));padding-bottom:calc(32px + var(--safe-bottom));">
+    <div style="font-size:52px;margin-bottom:16px;animation:sos-shake 0.5s ease-in-out infinite alternate">🚨</div>
+    <div style="font-family:'Syne',sans-serif;font-size:24px;font-weight:800;color:#fff;margin-bottom:8px;text-align:center">Sturz erkannt!</div>
+    <div style="font-size:13px;color:rgba(255,255,255,0.6);text-align:center;margin-bottom:24px;line-height:1.5" id="sos-info-text">FallBot hat einen möglichen Sturz erkannt.<br>Bist du in Ordnung?</div>
+    <div style="position:relative;width:120px;height:120px;margin-bottom:24px">
+      <svg width="120" height="120" style="position:absolute;top:0;left:0;transform:rotate(-90deg)">
+        <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(176,34,64,0.2)" stroke-width="6"/>
+        <circle id="sos-ring" cx="60" cy="60" r="52" fill="none" stroke="#b02240" stroke-width="6"
+          stroke-dasharray="326.7" stroke-dashoffset="0"
+          stroke-linecap="round"
+          style="transition:stroke-dashoffset 1s linear"/>
+      </svg>
+      <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;">
+        <div id="sos-countdown" style="font-family:'Syne',sans-serif;font-size:36px;font-weight:800;color:#fff;line-height:1">30</div>
+        <div style="font-size:10px;color:rgba(255,255,255,0.5);letter-spacing:1px">SEK.</div>
+      </div>
+    </div>
+    <div style="background:rgba(176,34,64,0.15);border:1px solid rgba(176,34,64,0.3);border-radius:14px;padding:12px 16px;margin-bottom:24px;width:100%;text-align:center;">
+      <div style="font-size:12px;color:rgba(255,255,255,0.5);margin-bottom:4px">Bei Ablauf wird kontaktiert</div>
+      <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:#fff">🚑 Notruf 112 &nbsp;·&nbsp; 📱 Anna Mustermann</div>
+    </div>
+    <button onclick="sosDismiss()" style="width:100%;padding:16px;background:linear-gradient(135deg,#2ecc71,#1a9e55);border:none;border-radius:16px;color:#fff;font-family:'Syne',sans-serif;font-size:16px;font-weight:800;cursor:pointer;margin-bottom:10px;box-shadow:0 4px 20px rgba(46,204,113,0.35);">
+      ✅ Alles gut – Alarm abbrechen
+    </button>
+    <button onclick="sosConfirm()" style="width:100%;padding:13px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:16px;color:rgba(255,255,255,0.6);font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;">
+      Jetzt sofort Notruf auslösen
+    </button>
+  </div>
+</div>
+
+<!-- Install Banner -->
+<div id="install-banner">
+  <div style="font-size:28px;flex-shrink:0">📱</div>
+  <div style="flex:1">
+    <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700">App installieren</div>
+    <div style="font-size:12px;color:var(--text-muted);margin-top:2px">Für schnelleren Zugriff & Offline-Nutzung</div>
+  </div>
+  <button id="install-btn" style="padding:8px 14px;background:linear-gradient(135deg,var(--wine),#6d1524);border:none;border-radius:10px;color:white;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;">Installieren</button>
+  <button onclick="document.getElementById('install-banner').classList.remove('visible')" style="width:28px;height:28px;background:var(--surface3);border:none;border-radius:50%;color:var(--text-muted);cursor:pointer;font-size:14px;flex-shrink:0;">×</button>
+</div>
+
+<script>
+// ── PWA: Service Worker Registration ─────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(reg => console.log('[FallGuard] SW registered:', reg.scope))
+      .catch(err => console.warn('[FallGuard] SW failed:', err));
+  });
+}
+
+// ── PWA: Install Prompt ───────────────────────────────────────────────────────
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  // Show install banner after 3 seconds
+  setTimeout(() => {
+    document.getElementById('install-banner').classList.add('visible');
+  }, 3000);
+});
+
+document.getElementById('install-btn').addEventListener('click', async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  document.getElementById('install-banner').classList.remove('visible');
+});
+
+window.addEventListener('appinstalled', () => {
+  document.getElementById('install-banner').classList.remove('visible');
+  deferredPrompt = null;
+});
+
+// ── Offline detection ─────────────────────────────────────────────────────────
+function updateOnlineStatus() {
+  const bar = document.getElementById('offline-bar');
+  if (navigator.onLine) {
+    bar.classList.remove('visible');
+  } else {
+    bar.classList.add('visible');
+  }
+}
+window.addEventListener('online', updateOnlineStatus);
+window.addEventListener('offline', updateOnlineStatus);
+updateOnlineStatus();
+
+// ── Page navigation ───────────────────────────────────────────────────────────
+const pageOrder = ['profile','data','home','aid','chat'];
+let currentPage = 'home';
+
+function switchPage(name) {
+  if(name === currentPage) return;
+  const fromEl = document.getElementById('page-' + currentPage);
+  const toEl   = document.getElementById('page-' + name);
+  if(!toEl) return;
+  const fromIdx = pageOrder.indexOf(currentPage);
+  const toIdx   = pageOrder.indexOf(name);
+  const goRight = toIdx > fromIdx;
+  fromEl.classList.remove('active');
+  fromEl.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
+  fromEl.style.opacity = '0';
+  fromEl.style.transform = goRight ? 'translateX(-45px) scale(0.96)' : 'translateX(45px) scale(0.96)';
+  fromEl.style.pointerEvents = 'none';
+  setTimeout(() => { fromEl.style.transition=''; fromEl.style.opacity=''; fromEl.style.transform=''; fromEl.style.pointerEvents=''; }, 300);
+  toEl.style.transition = 'none';
+  toEl.style.opacity = '0';
+  toEl.style.transform = goRight ? 'translateX(45px) scale(0.96)' : 'translateX(-45px) scale(0.96)';
+  toEl.style.pointerEvents = 'none';
+  toEl.classList.add('active');
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    toEl.style.transition = 'opacity 0.32s cubic-bezier(0.4,0,0.2,1), transform 0.32s cubic-bezier(0.4,0,0.2,1)';
+    toEl.style.opacity = '1';
+    toEl.style.transform = 'translateX(0) scale(1)';
+    toEl.style.pointerEvents = 'auto';
+    setTimeout(() => { toEl.style.transition=''; toEl.style.opacity=''; toEl.style.transform=''; toEl.style.pointerEvents=''; }, 360);
+  }));
+  currentPage = name;
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const navItem = document.getElementById('nav-' + name);
+  if(navItem) {
+    navItem.classList.add('active');
+    navItem.style.transform = 'scale(0.85)';
+    navItem.style.transition = 'none';
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      navItem.style.transition = 'transform 0.3s cubic-bezier(0.34,1.56,0.64,1)';
+      navItem.style.transform = 'scale(1)';
+      setTimeout(() => { navItem.style.transition=''; navItem.style.transform=''; }, 350);
+    }));
+  }
+}
+
+function openScanModal() {
+  document.getElementById('scan-modal').classList.add('open');
+  document.getElementById('found-devices').style.display = 'none';
+  document.getElementById('scan-status-text').textContent = 'Suche nach Geräten…';
+  setTimeout(() => {
+    document.getElementById('scan-status-text').textContent = '2 Geräte gefunden!';
+    const fd = document.getElementById('found-devices');
+    fd.style.opacity = '0'; fd.style.transform = 'translateY(12px)'; fd.style.display = 'block';
+    fd.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+    requestAnimationFrame(() => requestAnimationFrame(() => { fd.style.opacity='1'; fd.style.transform='translateY(0)'; }));
+  }, 2500);
+}
+function closeScanModal() { document.getElementById('scan-modal').classList.remove('open'); }
+function pairDevice(name) {
+  document.querySelectorAll('.found-device').forEach(d => { d.style.borderColor='var(--border)'; d.style.background='var(--bg)'; });
+  event.currentTarget.style.borderColor = 'var(--wine-light)';
+  event.currentTarget.style.background = 'rgba(139,26,46,0.1)';
+}
+
+function formatShort(str) {
+  const raw = parseFloat(str.replace(/\./g,'').replace(',','.'));
+  if (isNaN(raw)) return str;
+  if (raw >= 1000000) return (raw/1000000).toFixed(2).replace('.',',') + ' Mio.';
+  if (raw >= 100000)  return (raw/1000).toFixed(0) + ' Tsd.';
+  if (raw >= 10000)   return (raw/1000).toFixed(1).replace('.',',') + ' Tsd.';
+  return str;
+}
+
+let D = generateDailyData();
+let currentDataTab = 'today';
+let dataConfig = buildDataConfig();
+
+function switchDataTab(btn, key) {
+  btn.closest('.period-tabs').querySelectorAll('.period-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  currentDataTab = key;
+  dataConfig = buildDataConfig();
+  renderDataTab(key);
+}
+
+function abbrev(str) {
+  const raw = parseFloat(str.replace(/\./g,'').replace(',','.'));
+  if (isNaN(raw)) return str;
+  if (raw >= 1000000) return (raw / 1000000).toFixed(2).replace('.',',') + ' Mio.';
+  if (raw >= 100000)  return (raw / 1000).toFixed(0) + 'k';
+  if (raw >= 10000)   return (raw / 1000).toFixed(1).replace('.',',') + 'k';
+  return str;
+}
+
+function animateCountUp(el, targetStr, useAbbrev) {
+  const raw = targetStr.replace(/\./g,'').replace(',','.');
+  const num = parseFloat(raw);
+  if (isNaN(num)) { el.textContent = targetStr; return; }
+  const isFloat = targetStr.includes(',') || (targetStr.includes('.') && targetStr.split('.').pop().length <= 2 && !targetStr.includes('.000'));
+  const duration = 600;
+  const start = performance.now();
+  const startVal = num * 0.3;
+  function tick(now) {
+    const t = Math.min((now - start) / duration, 1);
+    const ease = 1 - Math.pow(1 - t, 3);
+    const current = startVal + (num - startVal) * ease;
+    let display;
+    if (useAbbrev) {
+      if (num >= 1000000) display = (current / 1000000).toFixed(2).replace('.',',') + ' Mio.';
+      else if (num >= 100000) display = (current / 1000).toFixed(0) + 'k';
+      else if (num >= 10000)  display = (current / 1000).toFixed(1).replace('.',',') + 'k';
+      else if (isFloat) display = current.toFixed(1).replace('.', ',');
+      else display = Math.round(current).toLocaleString('de-DE');
+    } else {
+      if (isFloat) display = current.toFixed(1).replace('.', ',');
+      else display = Math.round(current).toLocaleString('de-DE');
+    }
+    el.textContent = display;
+    if (t < 1) requestAnimationFrame(tick);
+    else el.textContent = useAbbrev ? abbrev(targetStr) : targetStr;
+  }
+  requestAnimationFrame(tick);
+}
+
+function renderDataTab(key) {
+  dataConfig = buildDataConfig();
+  const d = dataConfig[key];
+  document.getElementById('data-period-label').textContent = d.periodLabel;
+  animateCountUp(document.getElementById('chip-steps'), d.chips.steps, true);
+  animateCountUp(document.getElementById('chip-kcal'),  d.chips.kcal,  true);
+  animateCountUp(document.getElementById('chip-sleep'), d.chips.sleep, false);
+  document.getElementById('chip-steps-trend').textContent = d.chips.stepsTrend;
+  document.getElementById('chip-kcal-trend').textContent  = d.chips.kcalTrend;
+  document.getElementById('chip-sleep-trend').textContent = d.chips.sleepTrend;
+  const sc = d.stepsChart;
+  document.getElementById('steps-chart-label').textContent = sc.label;
+  document.getElementById('steps-goal').textContent = ' / ' + abbrev(sc.goal.replace(' / ',''));
+  animateCountUp(document.getElementById('steps-val'), sc.val, true);
+  const barsEl = document.getElementById('steps-bars-container');
+  const maxH = Math.max(...sc.bars.map(b => b.h));
+  barsEl.innerHTML = sc.bars.map(b => `
+    <div class="step-bar-wrap">
+      <div class="step-bar${b.today ? ' today' : ''}" style="height:0px;transition:height 0.5s cubic-bezier(0.34,1.3,0.64,1)" data-h="${Math.round(b.h / maxH * 52)}"></div>
+      <span class="step-bar-label${b.today ? '" style="color:var(--wine-light)' : ''}">${b.l}</span>
+    </div>
+  `).join('');
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    barsEl.querySelectorAll('.step-bar').forEach((bar, i) => {
+      bar.style.transitionDelay = `${i * 0.04}s`;
+      bar.style.height = bar.dataset.h + 'px';
+    });
+  }));
+  const hr = d.hrChart;
+  document.getElementById('hr-chart-label').textContent = hr.label;
+  animateCountUp(document.getElementById('hr-val'), hr.val, false);
+  document.getElementById('hr-min').textContent = hr.min;
+  document.getElementById('hr-max').textContent = hr.max;
+  const line = document.getElementById('hr-line');
+  const fill = document.getElementById('hr-fill');
+  line.style.transition = 'none';
+  line.setAttribute('d', 'M0,75 Q150,75 300,75');
+  fill.setAttribute('d', 'M0,75 Q150,75 300,75 L300,80 L0,80 Z');
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    line.style.transition = 'd 0.6s ease, opacity 0.3s ease';
+    line.setAttribute('d', hr.path);
+    fill.setAttribute('d', hr.path + ' L300,80 L0,80 Z');
+  }));
+  const list = document.getElementById('metrics-list');
+  list.innerHTML = d.metrics.map((m, i) => {
+    const displayVal = abbrev(m.val);
+    return `
+    <div class="metric-row" style="opacity:0;transform:translateX(-12px);transition:opacity 0.3s ease ${i*0.06}s,transform 0.3s ease ${i*0.06}s">
+      <div class="metric-icon-box ${m.bg}">${m.icon}</div>
+      <div class="metric-info">
+        <div class="mi-label">${m.label}</div>
+        <div class="mi-val">${displayVal}${m.unit ? ` <span style="font-size:12px;color:var(--text-muted);font-weight:400">${m.unit}</span>` : ''}</div>
+        <div class="mi-sub">${m.sub}</div>
+      </div>
+      <span class="metric-trend" style="color:var(--${m.tc})">${m.trend}</span>
+    </div>`;
+  }).join('');
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    list.querySelectorAll('.metric-row').forEach(row => { row.style.opacity='1'; row.style.transform='translateX(0)'; });
+  }));
+}
+
+renderDataTab('today');
+
+const aidData = {
+  herzstillstand: {
+    title: '💓 Herzstillstand', sub: 'Herz-Lungen-Wiederbelebung (HLW)',
+    steps: [
+      { title: 'Überblick & Sicherheit', text: 'Verschaffe dir einen Überblick. Ist die Person bewusstlos? Atmet sie? Gibt es weitere Verletzte? Sorge für deine eigene Sicherheit.' },
+      { title: 'Notruf 112', text: 'Rufe sofort den Notruf 112 an oder lasse jemanden rufen. Nenne Standort, Anzahl Betroffener und Art des Notfalls.' },
+      { title: 'Herzdruckmassage', text: 'Lege die Hände auf die Mitte des Brustkorbs. Drücke 30x kräftig herunter (ca. 5–6 cm tief), Frequenz: 100–120 pro Minute.' },
+      { title: 'Beatmung', text: 'Nach 30 Drücken: 2x beatmen. Kopf überstrecken, Nase zuhalten, Mund dicht über Mund der Person, gleichmäßig hineinblasen.' },
+      { title: 'AED einsetzen', text: 'Sobald ein AED verfügbar ist: einschalten und den Anweisungen des Geräts genau folgen. Den AED so früh wie möglich einsetzen.' },
+      { title: 'Weitermachen', text: 'Wechsle mit anderen Helfern alle 2 Minuten ab, bis der Rettungsdienst eintrifft oder die Person wieder ansprechbar ist.' }
+    ]
+  },
+  bewusstlos: {
+    title: '😵 Bewusstlosigkeit', sub: 'Stabile Seitenlage & Überblick',
+    steps: [
+      { title: 'Person ansprechen', text: 'Sprich die Person laut an und rüttle sie sanft an der Schulter: "Können Sie mich hören?"' },
+      { title: 'Notruf 112', text: 'Rufe sofort 112 an. Teile Standort, Zustand und Anzahl der Betroffenen mit.' },
+      { title: 'Atmung prüfen', text: 'Schaue, ob die Brust sich hebt. Höre auf Atemgeräusche. Spüre Luftbewegung an deiner Wange (max. 10 Sekunden).' },
+      { title: 'Stabile Seitenlage', text: 'Knie neben der Person. Lege den nächsten Arm im rechten Winkel weg. Halte die andere Hand an die Wange. Ziehe das Knie an. Drehe die Person auf die Seite.' },
+      { title: 'Atemwege freihalten', text: 'Überstrecke den Kopf leicht nach hinten und öffne den Mund, damit Erbrochenes ablaufen kann.' },
+      { title: 'Beobachten', text: 'Kontrolliere regelmäßig Atmung und Bewusstsein, bis der Rettungsdienst eintrifft. Bleibe bei der Person.' }
+    ]
+  },
+  blutung: {
+    title: '🩹 Blutungen stillen', sub: 'Wunden versorgen',
+    steps: [
+      { title: 'Eigenschutz beachten', text: 'Trage wenn möglich Einmalhandschuhe aus dem Erste-Hilfe-Kasten, um dich vor Infektionen zu schützen.' },
+      { title: 'Druck ausüben', text: 'Presse ein sauberes Tuch oder eine sterile Kompresse fest auf die Wunde. Halte den Druck mindestens 10 Minuten aufrecht.' },
+      { title: 'Druckverband anlegen', text: 'Binde die Kompresse mit einer Binde fest. Lege weitere Lagen drüber, falls Blut durchdringt – entferne die erste Lage nicht.' },
+      { title: 'Körperteil hochlagern', text: 'Lege die verletzte Stelle wenn möglich hoch, um den Blutfluss zu verringern.' },
+      { title: 'Person ruhighalten', text: 'Lasse die Person sich hinsetzen oder hinlegen, damit weniger Blut gepumpt wird und die Person nicht ohnmächtig wird.' },
+      { title: 'Notruf bei starker Blutung', text: 'Bei starken Blutungen, die sich nicht stillen lassen, oder bei Verdacht auf innere Blutung sofort 112 rufen.' }
+    ]
+  },
+  schlaganfall: {
+    title: '🧠 Schlaganfall', sub: 'FAST-Test & Sofortmaßnahmen',
+    steps: [
+      { title: 'FAST-Test durchführen', text: 'F = Face: Hängt ein Mundwinkel? A = Arms: Kann die Person beide Arme heben? S = Speech: Ist die Sprache undeutlich? T = Time: Zeit notieren, sofort 112 rufen!' },
+      { title: 'Sofort 112 rufen', text: 'Bei Verdacht auf Schlaganfall keine Zeit verlieren. Jede Minute zählt. Sage dem Rettungsdienst, wann die Symptome begonnen haben.' },
+      { title: 'Person beruhigen', text: 'Sprich ruhig und verständlich. Lass die Person in einer bequemen, sitzenden oder halbliegenden Position.' },
+      { title: 'Nichts geben', text: 'Gib der Person nichts zu essen oder trinken – das Schlucken kann beeinträchtigt sein und zu Verschlucken führen.' },
+      { title: 'Bewusstsein prüfen', text: 'Beobachte die Atmung und das Bewusstsein kontinuierlich. Bei Bewusstlosigkeit: stabile Seitenlage (wenn Atmung vorhanden).' },
+      { title: 'Warten & begleiten', text: 'Bleibe bei der Person bis zum Eintreffen des Rettungsdienstes. Notiere alle Beobachtungen für die Sanitäter.' }
+    ]
+  },
+  sturz: {
+    title: '🦴 Sturz & Knochenbruch', sub: 'Ruhigstellen & Stabilisieren',
+    steps: [
+      { title: 'Person beruhigen', text: 'Spreche die Person an, beruhige sie. Bewege sie nicht, falls ein Wirbelsäulen- oder Hüftbruch möglich ist.' },
+      { title: 'Notruf bei Verdacht', text: 'Bei Verdacht auf schwere Brüche (Hüfte, Wirbel, offene Frakturen) sofort 112 rufen.' },
+      { title: 'Extremität ruhighalten', text: 'Schiene oder Polstere die verletzte Stelle mit dem, was verfügbar ist (zusammengerollte Kleidung, Decke). Fixiere die Schiene mit Binden.' },
+      { title: 'Niemals richten', text: 'Versuche nicht, einen Knochen zu richten oder zurückzuschieben. Lass dies dem Fachpersonal.' },
+      { title: 'Wärme & Ruhe', text: 'Halte die Person warm (Schock-Gefahr). Lege eine Decke drüber und lass sie ruhig liegen bis Hilfe kommt.' }
+    ]
+  },
+  verbrennung: {
+    title: '🔥 Verbrennung', sub: 'Kühlen & Schützen',
+    steps: [
+      { title: 'Gefahr beseitigen', text: 'Entferne zuerst die Hitzequelle. Bei Kleidung: Feuer löschen, Kleidung NICHT ausziehen falls sie klebt.' },
+      { title: 'Mit Wasser kühlen', text: 'Kühle die betroffene Stelle sofort mit lauwarmem (nie eiskaltem!) Wasser für mindestens 10–15 Minuten.' },
+      { title: 'Abdecken', text: 'Bedecke die Wunde locker mit einer sterilen Wundauflage oder sauberem Tuch. Nie mit Watte oder klebenden Materialien.' },
+      { title: 'Schmuck entfernen', text: 'Entferne vorsichtig Ringe, Uhren oder Armbänder, bevor die Stelle anschwillt.' },
+      { title: 'Keine Hausmittel', text: 'Verwende keine Zahnpasta, Butter oder andere Hausmittel auf der Wunde – das verschlimmert die Verletzung.' },
+      { title: 'Notruf bei schweren Verbrennungen', text: 'Bei großflächigen Verbrennungen, Verbrennungen im Gesicht/an den Händen oder bei Kindern sofort 112 rufen.' }
+    ]
+  }
+};
+
+function openAid(type) {
+  const data = aidData[type];
+  document.getElementById('aid-title').textContent = data.title;
+  document.getElementById('aid-sub').textContent = data.sub;
+  let html = '';
+  data.steps.forEach((s, i) => {
+    html += `<div class="aid-step" style="opacity:0;transform:translateY(20px);transition:opacity 0.35s ease ${0.15 + i*0.07}s, transform 0.35s ease ${0.15 + i*0.07}s">
+      <div class="step-num">${i+1}</div>
+      <div class="step-content"><h4>${s.title}</h4><p>${s.text}</p></div>
+    </div>`;
+  });
+  html += `<div style="margin:0 16px 24px;opacity:0;transform:translateY(20px);transition:opacity 0.35s ease ${0.15 + data.steps.length*0.07}s, transform 0.35s ease ${0.15 + data.steps.length*0.07}s" class="emergency-fade">
+    <div class="emergency-banner" style="margin:0" onclick="triggerNotruf()">
+      <div class="eb-icon">🚨</div>
+      <div><h3>Notruf 112</h3><p>Im Ernstfall sofort anrufen</p></div>
+    </div>
+  </div>`;
+  const container = document.getElementById('aid-steps-container');
+  container.innerHTML = html;
+  container.scrollTop = 0;
+  const el = document.getElementById('aid-detail');
+  el.style.pointerEvents = 'auto';
+  el.style.opacity = '1';
+  el.style.transform = 'translateX(0)';
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    container.querySelectorAll('.aid-step, .emergency-fade').forEach(item => { item.style.opacity='1'; item.style.transform='translateY(0)'; });
+  }));
+}
+
+function closeAid() {
+  const el = document.getElementById('aid-detail');
+  el.style.opacity = '0';
+  el.style.transform = 'translateX(100%)';
+  el.style.pointerEvents = 'none';
+}
+
+function toggleSwitch(el) { el.classList.toggle('on'); }
+function toggleRow(row) {
+  const sw = row.querySelector('.toggle-switch');
+  if (sw) sw.classList.toggle('on');
+}
+
+let notrufTimer = null;
+let notrufSeconds = 0;
+
+function triggerNotruf() {
+  const overlay = document.getElementById('notruf-overlay');
+  const card    = document.getElementById('notruf-card');
+  overlay.style.pointerEvents = 'auto';
+  overlay.style.background = 'rgba(0,0,0,0.95)';
+  card.style.transform = 'translateY(0)';
+  setTimeout(() => {
+    document.getElementById('notruf-status-label').style.opacity = '1';
+    document.getElementById('notruf-btn-circle').style.transform = 'scale(1)';
+    document.getElementById('notruf-ring1').style.transform = 'translate(-50%,-50%) scale(1)';
+    document.getElementById('notruf-ring1').style.opacity = '1';
+    document.getElementById('notruf-ring2').style.transform = 'translate(-50%,-50%) scale(1)';
+    document.getElementById('notruf-ring2').style.opacity = '1';
+    document.getElementById('notruf-number').style.opacity = '1';
+    document.getElementById('notruf-number').style.transform = 'translateY(0)';
+    document.getElementById('notruf-connecting').style.opacity = '1';
+    document.getElementById('notruf-cancel-btn').style.opacity = '1';
+    document.getElementById('notruf-cancel-btn').style.transform = 'translateY(0)';
+  }, 100);
+  setTimeout(() => {
+    document.getElementById('notruf-status-label').textContent = 'Verbunden';
+    document.getElementById('notruf-status-label').style.color = '#2ecc71';
+    document.getElementById('notruf-connecting').style.display = 'none';
+    document.getElementById('notruf-connected').style.opacity = '1';
+    document.getElementById('notruf-btn-circle').style.background = 'linear-gradient(135deg,#1a8a4a,#146338)';
+    document.getElementById('notruf-btn-circle').style.boxShadow = '0 0 40px rgba(46,204,113,0.4)';
+    notrufSeconds = 0;
+    notrufTimer = setInterval(() => {
+      notrufSeconds++;
+      const m = Math.floor(notrufSeconds / 60);
+      const s = String(notrufSeconds % 60).padStart(2,'0');
+      document.getElementById('notruf-timer').textContent = `${m}:${s}`;
+    }, 1000);
+  }, 3000);
+}
+
+function cancelNotruf() {
+  clearInterval(notrufTimer);
+  notrufSeconds = 0;
+  const overlay = document.getElementById('notruf-overlay');
+  const card    = document.getElementById('notruf-card');
+  card.style.transform = 'translateY(100%)';
+  overlay.style.background = 'rgba(0,0,0,0)';
+  setTimeout(() => {
+    overlay.style.pointerEvents = 'none';
+    document.getElementById('notruf-status-label').style.opacity = '0';
+    document.getElementById('notruf-status-label').textContent = 'Verbinde mit Notruf';
+    document.getElementById('notruf-status-label').style.color = '#b02240';
+    document.getElementById('notruf-btn-circle').style.transform = 'scale(0)';
+    document.getElementById('notruf-btn-circle').style.background = 'linear-gradient(135deg,#8b1a2e,#6d1524)';
+    document.getElementById('notruf-btn-circle').style.boxShadow = '0 0 40px rgba(139,26,46,0.5)';
+    document.getElementById('notruf-ring1').style.transform = 'translate(-50%,-50%) scale(0)';
+    document.getElementById('notruf-ring1').style.opacity = '0';
+    document.getElementById('notruf-ring2').style.transform = 'translate(-50%,-50%) scale(0)';
+    document.getElementById('notruf-ring2').style.opacity = '0';
+    document.getElementById('notruf-number').style.opacity = '0';
+    document.getElementById('notruf-number').style.transform = 'translateY(12px)';
+    document.getElementById('notruf-connecting').style.opacity = '0';
+    document.getElementById('notruf-connecting').style.display = 'flex';
+    document.getElementById('notruf-connected').style.opacity = '0';
+    document.getElementById('notruf-timer').textContent = '0:00';
+    document.getElementById('notruf-cancel-btn').style.opacity = '0';
+    document.getElementById('notruf-cancel-btn').style.transform = 'translateY(10px)';
+  }, 450);
+}
+
+function seededRand(seed, min, max) {
+  let s = seed;
+  s = Math.imul(s ^ (s >>> 15), s | 1);
+  s ^= s + Math.imul(s ^ (s >>> 7), s | 61);
+  const r = ((s ^ (s >>> 14)) >>> 0) / 4294967296;
+  return Math.round(min + r * (max - min));
+}
+
+function getDailySeed() {
+  const d = new Date();
+  return d.getFullYear() * 10000 + (d.getMonth()+1) * 100 + d.getDate();
+}
+
+function generateDailyData() {
+  const seed = getDailySeed();
+  const steps       = seededRand(seed + 1, 4200,  12800);
+  const hr          = seededRand(seed + 2, 62,    82);
+  const hrRest      = seededRand(seed + 3, 55,    70);
+  const spo2        = seededRand(seed + 4, 95,    99);
+  const bpSys       = seededRand(seed + 5, 110,   130);
+  const bpDia       = seededRand(seed + 6, 70,    85);
+  const temp        = (36.2 + seededRand(seed + 7, 0, 8) * 0.1).toFixed(1);
+  const hrv         = seededRand(seed + 8, 32,    62);
+  const sleepH      = seededRand(seed + 9, 5,     9);
+  const sleepM      = seededRand(seed + 10, 0,    59);
+  const deepH       = seededRand(seed + 11, 0,    2);
+  const deepM       = seededRand(seed + 12, 10,   58);
+  const kcal        = seededRand(seed + 13, 900,  2200);
+  const kcalActive  = seededRand(seed + 14, 150,  600);
+  const hydration   = (seededRand(seed + 15, 8, 22) * 0.1).toFixed(1);
+  const weekBars = [];
+  const days = ['Mo','Di','Mi','Do','Fr','Sa','So'];
+  for (let i = 6; i >= 0; i--) {
+    const daySeed = getDailySeed() - i;
+    weekBars.push({ h: seededRand(daySeed + 1, 20, 65), l: days[(new Date().getDay() + 7 - i) % 7], today: i === 0 });
+  }
+  const monthBars = [];
+  for (let w = 0; w < 4; w++) {
+    const wSeed = getDailySeed() - (3-w)*7;
+    monthBars.push({ h: seededRand(wSeed+1, 25,65), l:`KW${w+1}`, today: w===3 });
+  }
+  const monthNames = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+  const yearBars = monthNames.map((m, i) => ({ h: seededRand(seed + 20 + i, 22, 68), l: m, today: i === new Date().getMonth() }));
+  const weekSteps  = weekBars.reduce((a,b) => a + Math.round(b.h / 65 * 12800), 0);
+  const monthSteps = Math.round(weekSteps * 4.3);
+  const yearSteps  = Math.round(monthSteps * 12);
+  const weekKcal   = kcal * 7;
+  const monthKcal  = Math.round(kcal * 30.4);
+  const yearKcal   = Math.round(kcal * 365);
+  const weekSleep  = ((sleepH + sleepM/60) * 7).toFixed(1);
+  const monthSleep = Math.round((sleepH + sleepM/60) * 30.4);
+  const yearSleep  = Math.round((sleepH + sleepM/60) * 365);
+  const hrVariance = seededRand(seed+30, 0, 5);
+  const hrPaths = [
+    `M0,${60-hrVariance} Q25,${55-hrVariance} 50,${42+hrVariance} Q75,${28+hrVariance} 100,${38-hrVariance} Q125,${50+hrVariance} 150,${30-hrVariance} Q175,${12+hrVariance} 200,${25+hrVariance} Q225,${40-hrVariance} 250,${20+hrVariance} Q275,${35+hrVariance} 300,${28-hrVariance}`,
+    `M0,${52-hrVariance} Q50,${45+hrVariance} 100,${38-hrVariance} Q150,${30+hrVariance} 200,${22-hrVariance} Q250,${14+hrVariance} 300,${18+hrVariance}`,
+    `M0,${48-hrVariance} Q75,${38+hrVariance} 150,${28-hrVariance} Q225,${18+hrVariance} 300,${14-hrVariance}`,
+    `M0,${62-hrVariance} Q50,${54+hrVariance} 100,${44-hrVariance} Q150,${34+hrVariance} 200,${22-hrVariance} Q250,${12+hrVariance} 300,${8-hrVariance}`
+  ];
+  const prevSeed = getDailySeed() - 1;
+  const prevSteps = seededRand(prevSeed+1, 4200, 12800);
+  const prevHr    = seededRand(prevSeed+2, 62, 82);
+  const stepsTrend = steps > prevSteps ? `↑ ${Math.round((steps-prevSteps)/prevSteps*100)}%` : `↓ ${Math.round((prevSteps-steps)/prevSteps*100)}%`;
+  const hrTrend = hr <= prevHr ? '↓' : '↑';
+  const hrvStatus = hrv >= 50 ? 'Gut' : hrv >= 40 ? 'Moderat' : 'Niedrig';
+  return {
+    steps, hr, hrRest, spo2, bpSys, bpDia, temp, hrv, hrvStatus,
+    sleepH, sleepM, deepH, deepM, kcal, kcalActive, hydration,
+    stepsTrend, hrTrend,
+    stepsStr:    steps.toLocaleString('de-DE'),
+    hrStr:       String(hr),
+    spo2Str:     String(spo2),
+    kcalStr:     kcal.toLocaleString('de-DE'),
+    bpStr:       `${bpSys}/${bpDia}`,
+    sleepStr:    `${sleepH}h ${String(sleepM).padStart(2,'0')}m`,
+    deepStr:     `${deepH}h ${String(deepM).padStart(2,'0')}m`,
+    hydraStr:    `${hydration} L`,
+    tempStr:     `${temp}`,
+    hrvStr:      String(hrv),
+    weekSteps: weekSteps.toLocaleString('de-DE'),
+    weekKcal:  weekKcal.toLocaleString('de-DE'),
+    weekSleep: weekSleep,
+    weekStepsTrend: `↑ ${seededRand(seed+40,5,25)}%`,
+    weekKcalTrend:  `↑ ${seededRand(seed+41,3,18)}%`,
+    monthSteps: monthSteps.toLocaleString('de-DE'),
+    monthKcal:  monthKcal.toLocaleString('de-DE'),
+    monthSleep: String(monthSleep),
+    monthStepsTrend: `↑ ${seededRand(seed+42,8,32)}%`,
+    monthKcalTrend:  `↑ ${seededRand(seed+43,6,28)}%`,
+    yearSteps: yearSteps.toLocaleString('de-DE'),
+    yearKcal:  yearKcal.toLocaleString('de-DE'),
+    yearSleep: String(yearSleep),
+    yearStepsTrend: `↑ ${seededRand(seed+44,15,45)}%`,
+    yearKcalTrend:  `↑ ${seededRand(seed+45,12,38)}%`,
+    weekBars, monthBars, yearBars, hrPaths,
+    hrWeekAvg:  seededRand(seed+50, 64, 80),
+    hrMonthAvg: seededRand(seed+51, 63, 79),
+    hrYearAvg:  seededRand(seed+52, 62, 78),
+  };
+}
+
+function scheduleMidnightRefresh() {
+  const now = new Date();
+  const midnight = new Date(now);
+  midnight.setHours(24, 0, 5, 0);
+  const msUntilMidnight = midnight - now;
+  setTimeout(() => { D = generateDailyData(); applyDailyDataEverywhere(); scheduleMidnightRefresh(); }, msUntilMidnight);
+}
+scheduleMidnightRefresh();
+
+function applyDailyDataEverywhere() {
+  document.getElementById('home-steps').textContent = D.stepsStr;
+  document.getElementById('home-hr').textContent    = D.hrStr;
+  document.getElementById('home-spo2').textContent  = D.spo2Str;
+  document.getElementById('home-kcal').textContent  = D.kcalStr;
+  renderDataTab(currentDataTab || 'today');
+  syncTipsWithData();
+}
+
+function buildDataConfig() {
+  return {
+    today: {
+      label: 'Heute', periodLabel: 'Gesundheitsübersicht · Heute',
+      chips: { steps: D.stepsStr, kcal: D.kcalStr, sleep: `${D.sleepH}.${Math.round(D.sleepM/6)}`,
+               stepsTrend: D.stepsTrend, kcalTrend: '↑ 5%', sleepTrend: 'Std. Schlaf' },
+      stepsChart: { label: 'Heute · Stündlich', val: D.stepsStr, goal: ` / 10.000`,
+        bars: [
+          {h:8,l:'6h'},{h:12,l:'7h'},{h:6,l:'8h'},{h:22,l:'9h'},
+          {h:Math.round(D.steps*0.08/130),l:'10h'},{h:Math.round(D.steps*0.12/130),l:'11h'},
+          {h:Math.round(D.steps*0.18/130),l:'12h'},{h:Math.round(D.steps*0.14/130),l:'13h'},
+          {h:Math.round(D.steps*0.10/130),l:'14h'},{h:Math.round(D.steps*0.16/130),l:'15h'},
+          {h:Math.round(D.steps*0.12/130),l:'16h'},{h:Math.round(D.steps*0.06/130),l:'17h'},
+          {today:true,h:Math.round(D.steps*0.04/130)+8,l:'18h'}
+        ]
+      },
+      hrChart: { label: 'Heute', val: D.hrStr,
+        min: `Min: ${D.hrRest} bpm`, max: `Max: ${D.hrRest + seededRand(getDailySeed()+60, 30, 60)} bpm`,
+        path: D.hrPaths[0] },
+      metrics: [
+        { icon:'❤️', bg:'bg-red-soft',   label:'Puls',                 val: D.hrStr,    unit:'bpm',  sub:`Ruhepuls: ${D.hrRest} bpm`,  trend: D.hrTrend, tc:'green' },
+        { icon:'🩸', bg:'bg-blue-soft',  label:'Blutsauerstoff (SpO₂)',val: D.spo2Str,  unit:'%',    sub:'Normal: 95–100%',             trend:'✓', tc:'green' },
+        { icon:'💉', bg:'bg-red-soft',   label:'Blutdruck',            val: D.bpStr,    unit:'mmHg', sub: D.bpSys < 120 ? 'Optimal' : 'Normal', trend:'↑', tc:'green' },
+        { icon:'🌡️',bg:'bg-orange-soft', label:'Körpertemperatur',     val: D.tempStr,  unit:'°C',   sub:'Normal',                      trend:'✓', tc:'green' },
+        { icon:'⚡', bg:'bg-purple-soft', label:'Stresslevel (HRV)',    val: D.hrvStr,   unit:'ms',   sub: D.hrvStatus,                  trend:'~', tc: D.hrv >= 45 ? 'green' : 'orange' },
+        { icon:'😴', bg:'bg-blue-soft',  label:'Schlafqualität',       val: D.sleepStr, unit:'',     sub:`Tiefschlaf: ${D.deepStr}`,    trend:'↑', tc:'green' },
+        { icon:'👣', bg:'bg-green-soft', label:'Schritte',             val: D.stepsStr, unit:'Schr.',sub:`Ziel: 10.000 • ${Math.min(100,Math.round(D.steps/100))}%`, trend:'↑', tc:'green' },
+        { icon:'🔥', bg:'bg-orange-soft',label:'Kalorien verbrannt',   val: D.kcalStr,  unit:'kcal', sub:`Aktiv: ${D.kcalActive.toLocaleString('de-DE')} kcal`, trend:'✓', tc:'green' },
+        { icon:'💧', bg:'bg-blue-soft',  label:'Hydration',            val: D.hydraStr, unit:'',     sub:`Ziel: 2.5 L • ${Math.round(parseFloat(D.hydration)/2.5*100)}%`, trend:'↓', tc:'orange' },
+      ]
+    },
+    week: {
+      label: 'Woche', periodLabel: 'Gesundheitsübersicht · Diese Woche',
+      chips: { steps: D.weekSteps, kcal: D.weekKcal, sleep: D.weekSleep, stepsTrend: D.weekStepsTrend, kcalTrend: D.weekKcalTrend, sleepTrend: 'Std. Schlaf' },
+      stepsChart: { label: 'Diese Woche', val: D.weekSteps, goal: ` / 70.000`, bars: D.weekBars },
+      hrChart: { label: 'Diese Woche (Ø)', val: String(D.hrWeekAvg), min: `Min: ${D.hrRest - 2} bpm`, max: `Max: ${D.hrRest + seededRand(getDailySeed()+61,35,65)} bpm`, path: D.hrPaths[1] },
+      metrics: [
+        { icon:'❤️', bg:'bg-red-soft',   label:'Ø Puls',           val: String(D.hrWeekAvg), unit:'bpm',  sub:`Ø Ruhepuls: ${D.hrRest} bpm`, trend:'↓', tc:'green' },
+        { icon:'🩸', bg:'bg-blue-soft',  label:'Ø SpO₂',           val: D.spo2Str,           unit:'%',    sub:'Stabil diese Woche',          trend:'✓', tc:'green' },
+        { icon:'💉', bg:'bg-red-soft',   label:'Ø Blutdruck',      val: D.bpStr,             unit:'mmHg', sub:'Normal',                      trend:'↑', tc:'green' },
+        { icon:'🌡️',bg:'bg-orange-soft', label:'Ø Temperatur',     val: D.tempStr,           unit:'°C',   sub:'Kein Fieber',                 trend:'✓', tc:'green' },
+        { icon:'⚡', bg:'bg-purple-soft', label:'Ø HRV',            val: D.hrvStr,            unit:'ms',   sub:D.hrvStatus,                   trend:'↑', tc: D.hrv >= 45 ? 'green':'orange' },
+        { icon:'😴', bg:'bg-blue-soft',  label:'Ø Schlaf / Nacht', val: D.sleepStr,          unit:'',     sub:`Tiefschlaf: Ø ${D.deepStr}`,  trend:'↑', tc:'green' },
+        { icon:'👣', bg:'bg-green-soft', label:'Schritte gesamt',  val: D.weekSteps,         unit:'Schr.',sub:`Ø ${D.stepsStr} / Tag`,       trend:'↑', tc:'green' },
+        { icon:'🔥', bg:'bg-orange-soft',label:'Kalorien gesamt',  val: D.weekKcal,          unit:'kcal', sub:`Aktiv: ${(D.kcalActive*7).toLocaleString('de-DE')} kcal`, trend:'↑', tc:'green' },
+        { icon:'💧', bg:'bg-blue-soft',  label:'Ø Hydration / Tag',val: D.hydraStr,          unit:'',     sub:'Ziel: 2.5 L',                 trend:'↑', tc:'orange'},
+      ]
+    },
+    month: {
+      label: 'Monat', periodLabel: 'Gesundheitsübersicht · Diesen Monat',
+      chips: { steps: D.monthSteps, kcal: D.monthKcal, sleep: D.monthSleep, stepsTrend: D.monthStepsTrend, kcalTrend: D.monthKcalTrend, sleepTrend: 'Std. Schlaf' },
+      stepsChart: { label: 'Dieser Monat (Wochen)', val: D.monthSteps, goal: ` / 280.000`, bars: D.monthBars },
+      hrChart: { label: 'Dieser Monat (Ø)', val: String(D.hrMonthAvg), min: `Min: ${D.hrRest - 3} bpm`, max: `Max: ${D.hrRest + seededRand(getDailySeed()+62,38,68)} bpm`, path: D.hrPaths[2] },
+      metrics: [
+        { icon:'❤️', bg:'bg-red-soft',   label:'Ø Puls',           val: String(D.hrMonthAvg),unit:'bpm',  sub:'Trend: sinkend ✓',            trend:'↓', tc:'green' },
+        { icon:'🩸', bg:'bg-blue-soft',  label:'Ø SpO₂',           val: D.spo2Str,           unit:'%',    sub:'Stabiler Monatswert',         trend:'✓', tc:'green' },
+        { icon:'💉', bg:'bg-red-soft',   label:'Ø Blutdruck',      val: D.bpStr,             unit:'mmHg', sub:'Optimal',                     trend:'↓', tc:'green' },
+        { icon:'🌡️',bg:'bg-orange-soft', label:'Ø Temperatur',     val: D.tempStr,           unit:'°C',   sub:'Kein Fieber im Monat',        trend:'✓', tc:'green' },
+        { icon:'⚡', bg:'bg-purple-soft', label:'Ø HRV',            val: D.hrvStr,            unit:'ms',   sub:`Verbesserung: +${seededRand(getDailySeed()+70,5,18)}%`, trend:'↑', tc:'green' },
+        { icon:'😴', bg:'bg-blue-soft',  label:'Ø Schlaf / Nacht', val: D.sleepStr,          unit:'',     sub:`Tiefschlaf: Ø ${D.deepStr}`,  trend:'↑', tc:'green' },
+        { icon:'👣', bg:'bg-green-soft', label:'Schritte gesamt',  val: D.monthSteps,        unit:'Schr.',sub:'Ziel: 280.000',               trend:'↑', tc:'green' },
+        { icon:'🔥', bg:'bg-orange-soft',label:'Kalorien gesamt',  val: D.monthKcal,         unit:'kcal', sub:`Aktiv: ${(D.kcalActive*30).toLocaleString('de-DE')} kcal`, trend:'↑', tc:'green' },
+        { icon:'💧', bg:'bg-blue-soft',  label:'Ø Hydration / Tag',val: D.hydraStr,          unit:'',     sub:'Ziel: 2.5 L',                 trend:'↑', tc:'green' },
+      ]
+    },
+    year: {
+      label: 'Jahr', periodLabel: 'Gesundheitsübersicht · Dieses Jahr',
+      chips: { steps: D.yearSteps, kcal: D.yearKcal, sleep: D.yearSleep, stepsTrend: D.yearStepsTrend, kcalTrend: D.yearKcalTrend, sleepTrend: 'Std. Schlaf' },
+      stepsChart: { label: 'Dieses Jahr (Monate)', val: D.yearSteps, goal: ` / 3.000.000`, bars: D.yearBars },
+      hrChart: { label: 'Dieses Jahr (Ø)', val: String(D.hrYearAvg), min: `Min: ${D.hrRest - 5} bpm`, max: `Max: ${D.hrRest + seededRand(getDailySeed()+63,40,75)} bpm`, path: D.hrPaths[3] },
+      metrics: [
+        { icon:'❤️', bg:'bg-red-soft',   label:'Ø Puls (Jahr)',       val: String(D.hrYearAvg), unit:'bpm',  sub:'Trend: ↓ vs Vorjahr',         trend:'↓', tc:'green' },
+        { icon:'🩸', bg:'bg-blue-soft',  label:'Ø SpO₂ (Jahr)',       val: D.spo2Str,           unit:'%',    sub:'Exzellenter Jahreswert',      trend:'✓', tc:'green' },
+        { icon:'💉', bg:'bg-red-soft',   label:'Ø Blutdruck (Jahr)',  val: D.bpStr,             unit:'mmHg', sub:'Optimal',                     trend:'↓', tc:'green' },
+        { icon:'🌡️',bg:'bg-orange-soft', label:'Ø Temperatur (Jahr)', val: D.tempStr,           unit:'°C',   sub:'Normal über 12 Monate',       trend:'✓', tc:'green' },
+        { icon:'⚡', bg:'bg-purple-soft', label:'Ø HRV (Jahr)',        val: D.hrvStr,            unit:'ms',   sub:`Steigerung: +${seededRand(getDailySeed()+71,15,35)}% vs VJ`, trend:'↑', tc:'green' },
+        { icon:'😴', bg:'bg-blue-soft',  label:'Ø Schlaf / Nacht',    val: D.sleepStr,          unit:'',     sub:`Tiefschlaf: Ø ${D.deepStr}`,  trend:'↑', tc:'green' },
+        { icon:'👣', bg:'bg-green-soft', label:'Schritte gesamt',     val: D.yearSteps,         unit:'Schr.',sub:'Ziel: 3 Mio.',                trend:'↑', tc:'green' },
+        { icon:'🔥', bg:'bg-orange-soft',label:'Kalorien gesamt',     val: D.yearKcal,          unit:'kcal', sub:`Aktiv: ${(D.kcalActive*365).toLocaleString('de-DE')} kcal`, trend:'↑', tc:'green' },
+        { icon:'💧', bg:'bg-blue-soft',  label:'Ø Hydration / Tag',   val: D.hydraStr,          unit:'',     sub:'Ziel: 2.5 L',                 trend:'↑', tc:'green' },
+      ]
+    }
+  };
+}
+
+function buildSystemPrompt() {
+  return `Du bist FallBot, ein freundlicher und kompetenter KI-Gesundheitsassistent der FallGuard App.
+Du hilfst Nutzern bei Gesundheitsfragen, erklärst ihre Fitnessdaten und gibst Erste-Hilfe-Hinweise.
+
+Aktuelle Gesundheitsdaten von heute (Max Mustermann, 34 Jahre):
+- Puls: ${D.hrStr} bpm (Ruhepuls: ${D.hrRest} bpm)
+- Blutsauerstoff (SpO₂): ${D.spo2Str}%
+- Blutdruck: ${D.bpStr} mmHg
+- Körpertemperatur: ${D.tempStr}°C
+- Stresslevel (HRV): ${D.hrvStr} ms (${D.hrvStatus})
+- Schlaf letzte Nacht: ${D.sleepStr} (Tiefschlaf: ${D.deepStr})
+- Schritte heute: ${D.stepsStr} (Ziel: 10.000 — ${Math.min(100,Math.round(D.steps/100))}%)
+- Kalorien verbrannt: ${D.kcalStr} kcal (davon aktiv: ${D.kcalActive.toLocaleString('de-DE')} kcal)
+- Hydration: ${D.hydraStr} (Ziel: 2.5 L)
+- Verbundene Geräte: FallGuard Band II (84% Akku), FallGuard Ring (31% Akku)
+- Wochenstatistik: ${D.weekSteps} Schritte, ${D.weekKcal} kcal, ${D.weekSleep} Std. Schlaf
+- Monatsstatistik: ${D.monthSteps} Schritte, ${D.monthKcal} kcal
+
+Antworte immer auf Deutsch. Sei präzise aber herzlich. Nutze gelegentlich passende Emojis.
+Weise bei medizinischen Notfällen immer auf den Notruf 112 hin.
+Empfehle bei ernsthaften Symptomen einen Arztbesuch.
+Halte Antworten kurz und mobilfreundlich (max 3-4 Sätze, außer bei komplexen Themen).`;
+}
+
+function syncTipsWithData() {
+  healthTips[0].text  = `Dir fehlen noch ${(10000 - D.steps).toLocaleString('de-DE')} Schritte zum Tagesziel (${D.stepsStr} / 10.000). Wie wäre ein kleiner Abendspaziergang?`;
+  healthTips[4].text  = `Du hast heute erst ${D.hydraStr} von 2.5 Litern getrunken. Stell dir jetzt ein großes Glas Wasser hin!`;
+  healthTips[6].text  = `Dein Tiefschlaf (${D.deepStr}) könnte besser sein. Vermeide Bildschirme 30 Min. vor dem Schlafen.`;
+  healthTips[9].text  = `Dein Puls (${D.hrStr} bpm) und Blutdruck (${D.bpStr} mmHg) sind ${D.bpSys < 125 ? 'optimal' : 'normal'}. Weiter so!`;
+  healthTips[13].text = `Nur noch ${(10000 - D.steps).toLocaleString('de-DE')} Schritte bis zu deinem Tagesziel! Das schaffst du locker in 30 Minuten.`;
+  healthTips[2].text  = `Dein Stresslevel (HRV: ${D.hrvStr} ms) ist ${D.hrvStatus.toLowerCase()}. Eine kurze 5-Minuten-Atemübung kann Wunder wirken.`;
+}
+
+let chatHistory = [];
+let isTyping = false;
+
+function sendQuickMsg(text) {
+  document.getElementById('chat-input').value = text;
+  document.getElementById('chat-suggestions').style.display = 'none';
+  sendChatMessage();
+}
+
+async function sendChatMessage() {
+  if (isTyping) return;
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  document.getElementById('chat-suggestions').style.display = 'none';
+  appendBubble(text, 'user');
+  chatHistory.push({ role: 'user', content: text });
+  if (detectFall(text)) { setTimeout(() => startSosAlarm(text), 600); }
+  isTyping = true;
+  const typing = document.getElementById('typing-indicator');
+  typing.style.display = 'block';
+  scrollChat();
+  const btn = document.getElementById('chat-send-btn');
+  btn.style.opacity = '0.5';
+  btn.style.pointerEvents = 'none';
+  const apiKey = localStorage.getItem('fg_api_key') || '';
+  if (!apiKey) {
+    typing.style.display = 'none';
+    isTyping = false;
+    btn.style.opacity = '1';
+    btn.style.pointerEvents = 'auto';
+    showApiKeyPrompt();
+    return;
+  }
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: buildSystemPrompt(),
+        messages: chatHistory
+      })
+    });
+    const data = await response.json();
+    if (data.error) {
+      typing.style.display = 'none';
+      appendBubble('⚠️ API-Fehler: ' + data.error.message + ' — Bitte prüfe deinen API-Key in den Einstellungen.', 'bot');
+    } else {
+      const reply = data.content?.[0]?.text || 'Es tut mir leid, ich konnte keine Antwort generieren.';
+      chatHistory.push({ role: 'assistant', content: reply });
+      typing.style.display = 'none';
+      appendBubble(reply, 'bot');
+    }
+  } catch (err) {
+    typing.style.display = 'none';
+    appendBubble('⚠️ Verbindungsfehler. Bitte überprüfe deinen API-Key und deine Internetverbindung.', 'bot');
+  }
+  isTyping = false;
+  btn.style.opacity = '1';
+  btn.style.pointerEvents = 'auto';
+  scrollChat();
+}
+
+function appendBubble(text, role) {
+  const container = document.getElementById('chat-messages');
+  const group = document.createElement('div');
+  group.className = `bubble-group ${role}`;
+  group.style.cssText = 'opacity:0;transform:translateY(8px);transition:opacity 0.25s ease,transform 0.25s ease';
+  const formatted = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+  if (role === 'bot') {
+    group.innerHTML = `<div class="bot-avatar">🤖</div><div class="chat-bubble bot">${formatted}</div>`;
+  } else {
+    group.innerHTML = `<div class="chat-bubble user">${formatted}</div>`;
+  }
+  container.appendChild(group);
+  requestAnimationFrame(() => requestAnimationFrame(() => { group.style.opacity='1'; group.style.transform='translateY(0)'; }));
+  scrollChat();
+}
+
+function resetChat() {
+  chatHistory = [];
+  isTyping = false;
+  const btn = document.getElementById('chat-send-btn');
+  if (btn) { btn.style.opacity='1'; btn.style.pointerEvents='auto'; }
+  document.getElementById('typing-indicator').style.display = 'none';
+  document.getElementById('chat-input').value = '';
+  document.getElementById('chat-suggestions').style.display = 'flex';
+  const messages = document.getElementById('chat-messages');
+  messages.innerHTML = '';
+  appendBubble(`Chat zurückgesetzt! 👋 Ich bin wieder bereit.<br><br>Deine heutigen Werte: ❤️ Puls: <strong>${D.hrStr} bpm</strong> · 🩸 SpO₂: <strong>${D.spo2Str}%</strong> · 👣 Schritte: <strong>${D.stepsStr}</strong><br><br>Wie kann ich dir helfen?`, 'bot');
+}
+
+function showApiKeyPrompt() {
+  var existing = document.getElementById('apikey-overlay');
+  if (existing) existing.remove();
+  var savedKey = localStorage.getItem('fg_api_key') || '';
+  var overlay = document.createElement('div');
+  overlay.id = 'apikey-overlay';
+  overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);z-index:400;display:flex;align-items:center;justify-content:center;padding:24px;';
+  var box = document.createElement('div');
+  box.style.cssText = 'background:var(--surface);border-radius:24px;padding:28px 24px;width:100%;max-width:380px;border:1px solid var(--border);box-shadow:0 20px 60px rgba(0,0,0,0.5);';
+  box.innerHTML = `
+    <div style="font-size:32px;text-align:center;margin-bottom:12px;">🔑</div>
+    <h2 style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;text-align:center;margin-bottom:8px;color:var(--text);">Anthropic API-Key</h2>
+    <p style="font-size:12px;color:var(--text-muted);text-align:center;margin-bottom:20px;line-height:1.5;">FallBot benötigt einen Anthropic API-Key.<br>Hol dir einen auf <strong style="color:var(--wine-light)">console.anthropic.com</strong></p>
+    <input id="apikey-input" type="password" placeholder="sk-ant-api03-..." value="${savedKey}" style="width:100%;padding:12px 16px;background:var(--bg);border:1px solid var(--border);border-radius:12px;color:var(--text);font-size:13px;outline:none;margin-bottom:12px;box-sizing:border-box;">
+    <button onclick="saveApiKey()" style="width:100%;padding:14px;background:linear-gradient(135deg,var(--wine) 0%,#6d1524 100%);border:none;border-radius:12px;color:white;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:8px;box-shadow:0 4px 16px var(--wine-glow);">Speichern & weiter</button>
+    <button onclick="document.getElementById('apikey-overlay').remove()" style="width:100%;padding:12px;background:var(--surface3);border:none;border-radius:12px;color:var(--text-muted);font-size:13px;cursor:pointer;">Abbrechen</button>
+  `;
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+  setTimeout(() => document.getElementById('apikey-input')?.focus(), 100);
+}
+
+function saveApiKey() {
+  var key = document.getElementById('apikey-input').value.trim();
+  if (!key) { alert('Bitte gib einen API-Key ein.'); return; }
+  localStorage.setItem('fg_api_key', key);
+  document.getElementById('apikey-overlay').remove();
+  var statusEl = document.getElementById('apikey-status');
+  if (statusEl) statusEl.textContent = 'sk-ant-....' + key.slice(-4) + ' ✓';
+  appendBubble('✅ API-Key gespeichert! Du kannst jetzt mit mir chatten.', 'bot');
+  scrollChat();
+}
+
+function scrollChat() {
+  const c = document.getElementById('chat-messages');
+  setTimeout(() => c.scrollTop = c.scrollHeight, 50);
+}
+
+let sosTimer = null;
+let sosSecondsLeft = 30;
+let sosEmergencyInfo = '';
+
+const FALL_KEYWORDS = [
+  'hingefallen', 'hingestürzt', 'gestürzt', 'gestuerzt',
+  'bin gefallen', 'umgefallen', 'umgekippt',
+  'kann nicht aufstehen', 'komme nicht hoch',
+  'bewusstlos', 'ohnmächtig', 'ohnmacht',
+  'herzstillstand', 'herzinfarkt', 'kein puls',
+  'atme nicht', 'atmet nicht', 'keine atmung',
+  'schlaganfall', 'kann nicht sprechen', 'lähmung',
+  'starke blutung', 'blutet stark', 'viel blut',
+  'notfall', 'hilfe ich', 'bitte hilfe', 'brauche hilfe sofort',
+  'unfall', 'verunglückt', 'zusammengebrochen', 'kollabiert'
+];
+
+function detectFall(text) {
+  const lower = text.toLowerCase();
+  return FALL_KEYWORDS.some(k => lower.includes(k));
+}
+
+function startSosAlarm(userMessage) {
+  sosEmergencyInfo = userMessage;
+  sosSecondsLeft = 30;
+  const overlay = document.getElementById('sos-overlay');
+  overlay.style.pointerEvents = 'auto';
+  overlay.style.opacity = '1';
+  document.getElementById('sos-info-text').innerHTML =
+    `FallBot hat einen möglichen Notfall erkannt.<br><em style="color:rgba(255,200,200,0.8)">"${userMessage.length > 50 ? userMessage.slice(0,50)+'…' : userMessage}"</em>`;
+  const ring = document.getElementById('sos-ring');
+  const totalDash = 326.7;
+  ring.style.strokeDashoffset = '0';
+  document.getElementById('sos-countdown').textContent = '30';
+  if (navigator.vibrate) navigator.vibrate([300, 100, 300]);
+  sosTimer = setInterval(() => {
+    sosSecondsLeft--;
+    document.getElementById('sos-countdown').textContent = sosSecondsLeft;
+    const progress = (30 - sosSecondsLeft) / 30;
+    ring.style.strokeDashoffset = totalDash * progress;
+    if (sosSecondsLeft <= 10) { ring.style.stroke = '#ff4444'; document.getElementById('sos-countdown').style.color = '#ff6666'; }
+    if (sosSecondsLeft <= 5 && navigator.vibrate) navigator.vibrate(200);
+    if (sosSecondsLeft <= 0) { clearInterval(sosTimer); sosAutoTrigger(); }
+  }, 1000);
+}
+
+function sosAutoTrigger() {
+  const overlay = document.getElementById('sos-overlay');
+  overlay.style.opacity = '0';
+  overlay.style.pointerEvents = 'none';
+  document.getElementById('sos-ring').style.stroke = '#b02240';
+  document.getElementById('sos-countdown').style.color = '#fff';
+  const summary = `🚨 **Alarm ausgelöst!** Da keine Rückmeldung kam, wurde automatisch:\n\n• **Notruf 112** kontaktiert\n• **Anna Mustermann** (Notfallkontakt) benachrichtigt\n\nÜbermittelte Information: *"${sosEmergencyInfo}"*\n\nDer Standort und deine aktuellen Vitaldaten wurden weitergegeben. Bitte bleib ruhig.`;
+  appendBubble(summary, 'bot');
+  scrollChat();
+  if (currentPage !== 'chat') switchPage('chat');
+  setTimeout(() => triggerNotruf(), 500);
+}
+
+function sosDismiss() {
+  clearInterval(sosTimer);
+  const overlay = document.getElementById('sos-overlay');
+  overlay.style.opacity = '0';
+  overlay.style.pointerEvents = 'none';
+  document.getElementById('sos-ring').style.stroke = '#b02240';
+  document.getElementById('sos-ring').style.strokeDashoffset = '0';
+  document.getElementById('sos-countdown').style.color = '#fff';
+  document.getElementById('sos-countdown').textContent = '30';
+  appendBubble('✅ Alarm abgebrochen. Schön, dass du in Ordnung bist! Wenn du doch Schmerzen hast oder Hilfe brauchst, schreib mir einfach.', 'bot');
+  scrollChat();
+  if (currentPage !== 'chat') switchPage('chat');
+}
+
+function sosConfirm() { clearInterval(sosTimer); sosAutoTrigger(); }
+
+const healthTips = [
+  { icon:'🏃', color:'#e67e22', label:'Bewegung',      text:'Mir ist aufgefallen, dass du heute erst 6.482 von 10.000 Schritten hast. Wie wäre ein kleiner Abendspaziergang?' },
+  { icon:'🚴', color:'#3498db', label:'Aktivität',     text:'Du hast diese Woche wenig Sport gemacht. 20 Minuten Radfahren würden deinen HRV-Wert deutlich verbessern!' },
+  { icon:'🧘', color:'#9b59b6', label:'Entspannung',   text:'Dein Stresslevel ist erhöht. Eine kurze 5-Minuten-Atemübung kann Wunder wirken.' },
+  { icon:'💪', color:'#e74c3c', label:'Sport',         text:'Perfekter Tag für ein kurzes Workout! Dein Puls ist ruhig — dein Körper ist bereit.' },
+  { icon:'💧', color:'#3498db', label:'Hydration',     text:'Du hast heute noch nicht genug getrunken. Stell dir jetzt ein großes Glas Wasser hin!' },
+  { icon:'😴', color:'#6c5ce7', label:'Schlaf',        text:'Dein Tiefschlaf könnte besser sein. Vermeide Bildschirme 30 Min. vor dem Schlafen.' },
+  { icon:'🌙', color:'#8e44ad', label:'Schlaf',        text:'Für besseren Schlaf: jeden Tag zur gleichen Zeit ins Bett — auch am Wochenende. Dein Körper dankt es dir!' },
+  { icon:'🥗', color:'#27ae60', label:'Ernährung',     text:'Nach diesem Aktivitätslevel brauchst du Proteine zur Regeneration. Hülsenfrüchte oder Hühnchen sind ideal.' },
+  { icon:'🍎', color:'#e74c3c', label:'Ernährung',     text:'Ein Apfel am Nachmittag hält den Blutzucker stabil und beugt Heißhunger am Abend vor.' },
+  { icon:'❤️', color:'#e74c3c', label:'Herzgesundheit',text:'Dein Puls und Blutdruck sind optimal. Weiter so!' },
+  { icon:'🧠', color:'#9b59b6', label:'Mental',        text:'Kurze Pausen im Alltag helfen deinem Nervensystem, sich zu erholen. 5 Minuten reichen!' },
+  { icon:'☀️', color:'#f39c12', label:'Wohlbefinden',  text:'15 Minuten Tageslicht am Morgen regulieren deinen Schlaf-Wach-Rhythmus und heben die Stimmung.' },
+  { icon:'📵', color:'#7f8c8d', label:'Digital Detox', text:'Gönn dir heute Abend 1 Stunde ohne Smartphone. Dein Gehirn braucht echte Ruhephasen.' },
+  { icon:'🔋', color:'#e67e22', label:'Gerät',         text:'Dein FallGuard Ring hat nur noch 31% Akku. Denk daran, ihn heute Abend zu laden!' },
+  { icon:'👣', color:'#16a085', label:'Schritte',      text:'Nur noch ein paar Schritte bis zu deinem Tagesziel! Das schaffst du locker in 30 Minuten.' },
+  { icon:'🫀', color:'#c0392b', label:'Herz',          text:'Regelmäßiges Ausdauertraining senkt langfristig den Ruhepuls. Schon 30 Min. Gehen täglich reichen.' },
+  { icon:'🥦', color:'#2ecc71', label:'Ernährung',     text:'Grünes Gemüse stärkt dein Immunsystem. Spinat, Brokkoli oder Grünkohl einfach in die nächste Mahlzeit!' },
+  { icon:'🍵', color:'#27ae60', label:'Hydration',     text:'Grüner Tee zählt zur Flüssigkeitsbilanz und enthält wertvolle Antioxidantien. Gute Alternative zu Wasser!' },
+  { icon:'🏊', color:'#1abc9c', label:'Ausdauer',      text:'Schwimmen stärkt Herz & Lunge gleichzeitig. Nur 2× pro Woche reichen für spürbare Verbesserungen.' },
+  { icon:'🛏️', color:'#6c5ce7', label:'Schlaf',        text:'Deine Schlafdauer ist gut! Ziel: 7–9 Stunden. Du bist auf dem richtigen Weg, Max.' },
+];
+
+let currentTipIndex = 0;
+let tipAutoInterval = null;
+
+function getTipIndexForTime() {
+  const hour = new Date().getHours();
+  return Math.floor(hour / 3) % healthTips.length;
+}
+
+function renderTip(index, direction) {
+  const tip = healthTips[index];
+  const iconEl   = document.getElementById('tip-icon');
+  const textEl   = document.getElementById('tip-text');
+  const accentEl = document.getElementById('tip-accent');
+  const labelEl  = document.getElementById('tip-label');
+  const outDir   = direction === 'next' ? '-20px' : '20px';
+  textEl.style.transition = 'opacity 0.15s ease, transform 0.15s ease';
+  iconEl.style.transition  = 'opacity 0.15s ease, transform 0.15s ease';
+  textEl.style.opacity = '0'; textEl.style.transform = `translateX(${outDir})`;
+  iconEl.style.opacity = '0'; iconEl.style.transform = 'scale(0.6)';
+  setTimeout(() => {
+    iconEl.textContent = tip.icon;
+    textEl.textContent = tip.text;
+    labelEl.textContent = tip.label;
+    accentEl.style.background = tip.color;
+    labelEl.style.color = tip.color;
+    const inDir = direction === 'next' ? '20px' : '-20px';
+    textEl.style.transition = 'none'; textEl.style.transform = `translateX(${inDir})`;
+    iconEl.style.transition  = 'none'; iconEl.style.transform = 'scale(0.6)';
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      textEl.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+      iconEl.style.transition  = 'opacity 0.3s ease, transform 0.3s ease';
+      textEl.style.opacity = '1'; textEl.style.transform = 'translateX(0)';
+      iconEl.style.opacity = '1'; iconEl.style.transform = 'scale(1)';
+    }));
+    renderTipDots(index);
+  }, 160);
+}
+
+function renderTipDots(active) {
+  const dotsEl = document.getElementById('tip-dots');
+  const total = healthTips.length;
+  let html = '';
+  for (let i = 0; i < total; i++) {
+    const isActive = i === active;
+    html += `<div style="width:${isActive ? 18 : 5}px;height:5px;border-radius:3px;background:${isActive ? 'var(--wine-light)' : 'var(--surface3)'};transition:all 0.35s cubic-bezier(0.4,0,0.2,1);flex-shrink:0;"></div>`;
+  }
+  dotsEl.innerHTML = html;
+}
+
+function nextTip() {
+  currentTipIndex = (currentTipIndex + 1) % healthTips.length;
+  renderTip(currentTipIndex, 'next');
+  clearInterval(tipAutoInterval);
+  tipAutoInterval = setInterval(() => {
+    currentTipIndex = (currentTipIndex + 1) % healthTips.length;
+    renderTip(currentTipIndex, 'next');
+  }, 8000);
+}
+
+function initTips() {
+  currentTipIndex = getTipIndexForTime();
+  const hour = new Date().getHours();
+  const slot = Math.floor(hour / 3);
+  const s = slot * 3, e = s + 3;
+  document.getElementById('tip-time-label').textContent = `· ${String(s).padStart(2,'0')}:00–${String(Math.min(e,24)).padStart(2,'0')}:00`;
+  const tip = healthTips[currentTipIndex];
+  document.getElementById('tip-icon').textContent  = tip.icon;
+  document.getElementById('tip-text').textContent  = tip.text;
+  document.getElementById('tip-label').textContent = tip.label;
+  document.getElementById('tip-accent').style.background = tip.color;
+  document.getElementById('tip-label').style.color = tip.color;
+  renderTipDots(currentTipIndex);
+  tipAutoInterval = setInterval(() => {
+    currentTipIndex = (currentTipIndex + 1) % healthTips.length;
+    renderTip(currentTipIndex, 'next');
+  }, 8000);
+}
+
+initTips();
+
+function updateGreeting() {
+  const h = new Date().getHours();
+  let greeting;
+  if      (h >= 5  && h < 11) greeting = 'Guten Morgen, Max ☀️';
+  else if (h >= 11 && h < 13) greeting = 'Guten Vormittag, Max 🌤️';
+  else if (h >= 13 && h < 17) greeting = 'Guten Nachmittag, Max 🌞';
+  else if (h >= 17 && h < 21) greeting = 'Guten Abend, Max 🌆';
+  else if (h >= 21 && h < 23) greeting = 'Gute Nacht bald, Max 🌙';
+  else                         greeting = 'Noch wach, Max? 🌃';
+  document.getElementById('hero-greeting').textContent = greeting;
+}
+
+let isDark = localStorage.getItem('fg_theme') !== 'light';
+
+function applyTheme(dark) {
+  const icon  = document.getElementById('theme-icon');
+  const label = document.getElementById('theme-label');
+  const val   = document.getElementById('theme-val');
+  const tog   = document.getElementById('theme-toggle');
+  const meta  = document.getElementById('theme-color-meta');
+  if (dark) {
+    document.body.classList.remove('light');
+    if (icon)  icon.textContent  = '🌙';
+    if (label) label.textContent = 'Dark Mode';
+    if (val)   val.textContent   = 'Aktuell aktiv';
+    if (tog)   tog.classList.add('on');
+    if (meta)  meta.content = '#1a1a1e';
+  } else {
+    document.body.classList.add('light');
+    if (icon)  icon.textContent  = '☀️';
+    if (label) label.textContent = 'Light Mode';
+    if (val)   val.textContent   = 'Aktuell aktiv';
+    if (tog)   tog.classList.remove('on');
+    if (meta)  meta.content = '#f4f4f6';
+  }
+  localStorage.setItem('fg_theme', dark ? 'dark' : 'light');
+  renderGoalsList();
+  renderDataTab(currentDataTab || 'today');
+}
+
+function toggleDarkMode() { isDark = !isDark; applyTheme(isDark); }
+
+const goalDefs = [
+  { key:'steps',    icon:'👣', label:'Schritte',         unit:'Schr.', min:1000,  max:30000, step:500,  default:10000, color:'#16a085' },
+  { key:'kcal',     icon:'🔥', label:'Kalorien',         unit:'kcal',  min:500,   max:5000,  step:50,   default:2000,  color:'#e67e22' },
+  { key:'water',    icon:'💧', label:'Wasser',           unit:'L',     min:1,     max:5,     step:0.1,  default:2.5,   color:'#3498db', isFloat:true },
+  { key:'sleep',    icon:'😴', label:'Schlaf',           unit:'Std.',  min:5,     max:12,    step:0.5,  default:8,     color:'#6c5ce7', isFloat:true },
+  { key:'active',   icon:'💪', label:'Aktive Minuten',   unit:'Min.',  min:10,    max:180,   step:5,    default:30,    color:'#e74c3c' },
+  { key:'standing', icon:'🧍', label:'Stehstunden',      unit:'Std.',  min:4,     max:16,    step:1,    default:8,     color:'#27ae60' },
+  { key:'hr_max',   icon:'❤️', label:'Max. Herzrate',    unit:'bpm',   min:140,   max:220,   step:5,    default:180,   color:'#c0392b' },
+  { key:'spo2_min', icon:'🩸', label:'Min. SpO₂-Alarm',  unit:'%',     min:85,    max:97,    step:1,    default:92,    color:'#2980b9' },
+  { key:'weight',   icon:'⚖️', label:'Zielgewicht',      unit:'kg',    min:40,    max:150,   step:0.5,  default:75,    color:'#8e44ad', isFloat:true },
+];
+
+let userGoals = {};
+goalDefs.forEach(g => {
+  const saved = localStorage.getItem('fg_goal_' + g.key);
+  userGoals[g.key] = saved !== null ? parseFloat(saved) : g.default;
+});
+
+function renderGoalsList() {
+  const list = document.getElementById('goals-list');
+  if (!list) return;
+  list.innerHTML = goalDefs.map(g => {
+    const val = userGoals[g.key];
+    const pct = Math.min(100, Math.round((val - g.min) / (g.max - g.min) * 100));
+    const displayVal = g.isFloat ? val.toFixed(1).replace('.',',') : val.toLocaleString('de-DE');
+    return `
+    <div class="profile-row" onclick="openGoals()">
+      <span class="pr-icon">${g.icon}</span>
+      <div class="pr-info">
+        <div class="pri-label">${g.label}</div>
+        <div style="margin-top:5px;height:4px;background:var(--surface3);border-radius:2px;overflow:hidden">
+          <div style="height:100%;width:${pct}%;background:${g.color};border-radius:2px;transition:width 0.5s ease"></div>
+        </div>
+      </div>
+      <div style="text-align:right;flex-shrink:0;margin-left:10px">
+        <div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:var(--text)">${displayVal}</div>
+        <div style="font-size:10px;color:var(--text-dim)">${g.unit}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderGoalsEditor() {
+  const editor = document.getElementById('goals-editor');
+  editor.innerHTML = goalDefs.map((g, i) => {
+    const val = userGoals[g.key];
+    const displayVal = g.isFloat ? val.toFixed(1).replace('.',',') : val.toLocaleString('de-DE');
+    const pct = Math.min(100, Math.round((val - g.min) / (g.max - g.min) * 100));
+    return `
+    <div style="background:var(--surface);border-radius:16px;padding:16px;margin-bottom:12px;border:1px solid var(--border);opacity:0;transform:translateY(16px);transition:opacity 0.3s ease ${i*0.05}s,transform 0.3s ease ${i*0.05}s;" class="goal-card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:36px;height:36px;border-radius:10px;background:${g.color}22;display:flex;align-items:center;justify-content:center;font-size:17px;">${g.icon}</div>
+          <div>
+            <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--text)">${g.label}</div>
+            <div style="font-size:11px;color:var(--text-muted)">${g.unit} · ${g.min}–${g.isFloat ? g.max.toFixed(1) : g.max.toLocaleString('de-DE')}</div>
+          </div>
+        </div>
+        <div style="font-family:'Syne',sans-serif;font-size:21px;font-weight:800;color:${g.color};min-width:55px;text-align:right;" id="goal-display-${g.key}">${displayVal}</div>
+      </div>
+      <input type="range" id="goal-slider-${g.key}" min="${g.min}" max="${g.max}" step="${g.step}" value="${val}"
+        oninput="updateGoalSlider('${g.key}', this.value)"
+        style="width:100%;height:6px;-webkit-appearance:none;appearance:none;background:linear-gradient(to right,${g.color} ${pct}%,var(--surface3) ${pct}%);border-radius:3px;outline:none;cursor:pointer;">
+      <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
+        ${getPresets(g).map(p => `<button onclick="setGoalPreset('${g.key}', ${p.val})" style="padding:5px 10px;background:var(--surface3);border:1px solid var(--border);border-radius:20px;font-size:11px;color:var(--text-muted);cursor:pointer;transition:all 0.2s;white-space:nowrap;" class="preset-btn" data-key="${g.key}" data-val="${p.val}">${p.label}</button>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    editor.querySelectorAll('.goal-card').forEach(c => { c.style.opacity='1'; c.style.transform='translateY(0)'; });
+  }));
+}
+
+function getPresets(g) {
+  const presets = {
+    steps:    [{val:5000,label:'Leicht · 5k'},{val:8000,label:'Moderat · 8k'},{val:10000,label:'Standard · 10k'},{val:15000,label:'Sportlich · 15k'}],
+    kcal:     [{val:1500,label:'Diät'},{val:2000,label:'Normal'},{val:2500,label:'Aktiv'},{val:3000,label:'Sport'}],
+    water:    [{val:1.5,label:'1,5L'},{val:2,label:'2L'},{val:2.5,label:'2,5L'},{val:3,label:'3L'}],
+    sleep:    [{val:6,label:'6h'},{val:7,label:'7h'},{val:8,label:'8h'},{val:9,label:'9h'}],
+    active:   [{val:20,label:'20Min'},{val:30,label:'30Min'},{val:45,label:'45Min'},{val:60,label:'1h'}],
+    standing: [{val:6,label:'6h'},{val:8,label:'8h'},{val:10,label:'10h'},{val:12,label:'12h'}],
+    hr_max:   [{val:170,label:'170'},{val:180,label:'180'},{val:190,label:'190'},{val:200,label:'200'}],
+    spo2_min: [{val:90,label:'90%'},{val:92,label:'92%'},{val:94,label:'94%'},{val:95,label:'95%'}],
+    weight:   [{val:60,label:'60 kg'},{val:70,label:'70 kg'},{val:75,label:'75 kg'},{val:80,label:'80 kg'}],
+  };
+  return presets[g.key] || [];
+}
+
+function updateGoalSlider(key, rawVal) {
+  const g = goalDefs.find(g => g.key === key);
+  const val = parseFloat(rawVal);
+  userGoals[key] = val;
+  const displayVal = g.isFloat ? val.toFixed(1).replace('.',',') : Math.round(val).toLocaleString('de-DE');
+  document.getElementById('goal-display-' + key).textContent = displayVal;
+  const pct = Math.min(100, Math.round((val - g.min) / (g.max - g.min) * 100));
+  const slider = document.getElementById('goal-slider-' + key);
+  slider.style.background = `linear-gradient(to right, ${g.color} ${pct}%, var(--surface3) ${pct}%)`;
+  document.querySelectorAll(`.preset-btn[data-key="${key}"]`).forEach(btn => {
+    const isActive = parseFloat(btn.dataset.val) === val;
+    btn.style.background = isActive ? g.color + '33' : 'var(--surface3)';
+    btn.style.borderColor = isActive ? g.color : 'var(--border)';
+    btn.style.color = isActive ? g.color : 'var(--text-muted)';
+  });
+}
+
+function setGoalPreset(key, val) {
+  userGoals[key] = val;
+  const slider = document.getElementById('goal-slider-' + key);
+  if (slider) { slider.value = val; updateGoalSlider(key, val); }
+}
+
+function openGoals() {
+  renderGoalsEditor();
+  const el = document.getElementById('goals-overlay');
+  el.style.pointerEvents = 'auto';
+  el.style.opacity = '1';
+  el.style.transform = 'translateX(0)';
+}
+
+function closeGoals() {
+  const el = document.getElementById('goals-overlay');
+  el.style.opacity = '0';
+  el.style.transform = 'translateX(100%)';
+  el.style.pointerEvents = 'none';
+}
+
+function saveGoals() {
+  goalDefs.forEach(g => localStorage.setItem('fg_goal_' + g.key, userGoals[g.key]));
+  const btn = document.querySelector('#goals-overlay button[onclick="saveGoals()"]');
+  const orig = btn.textContent;
+  btn.textContent = '✓ Gespeichert!';
+  btn.style.background = 'linear-gradient(135deg,#1a8a4a,#146338)';
+  setTimeout(() => {
+    btn.textContent = orig;
+    btn.style.background = 'linear-gradient(135deg,var(--wine) 0%,#6d1524 100%)';
+    closeGoals();
+    renderGoalsList();
+  }, 1200);
+}
+
+renderGoalsList();
+
+updateGreeting();
+setInterval(updateGreeting, 60000);
+
+document.getElementById('page-home').classList.add('active');
+document.getElementById('nav-home').classList.add('active');
+applyDailyDataEverywhere();
+applyTheme(isDark);
+
+const savedKey = localStorage.getItem('fg_api_key');
+const statusEl = document.getElementById('apikey-status');
+if (statusEl) statusEl.textContent = savedKey ? 'sk-ant-....' + savedKey.slice(-4) + ' ✓' : 'Tippe zum Einrichten';
+</script>
+</body>
+</html>
