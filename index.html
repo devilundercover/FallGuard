@@ -60,7 +60,7 @@
     --safe-left: env(safe-area-inset-left, 0px);
     --safe-right: env(safe-area-inset-right, 0px);
     /* Nav height — dynamic based on safe area */
-    --nav-height: calc(56px + max(env(safe-area-inset-bottom, 0px), 12px));
+    --nav-height: calc(56px + max(env(safe-area-inset-bottom, 0px), 8px));
   }
 
   /* ===== LIGHT MODE ===== */
@@ -173,11 +173,24 @@
     flex-shrink: 0;
     position: relative;
     z-index: 100;
-    /* Fill all the way to the physical bottom edge */
     padding: 8px 8px 0;
-    padding-bottom: max(var(--safe-bottom), 12px);
-    /* Height auto based on content + safe area */
-    min-height: calc(56px + max(var(--safe-bottom), 12px));
+    padding-bottom: max(env(safe-area-inset-bottom, 0px), 8px);
+    min-height: calc(56px + max(env(safe-area-inset-bottom, 0px), 8px));
+  }
+  /* Fill the physical bottom edge below the nav */
+  .bottom-nav::after {
+    content: '';
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: max(env(safe-area-inset-bottom, 0px), 0px);
+    background: rgba(30,30,36,0.98);
+    z-index: 99;
+    pointer-events: none;
+  }
+  body.light .bottom-nav::after {
+    background: rgba(244,244,246,0.98);
   }
 
   .nav-item {
