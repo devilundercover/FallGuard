@@ -98,6 +98,12 @@
 
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
 
+  /* Safe area Basis-Fix */
+  body {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
   html {
     width: 100%;
     height: 100%;
@@ -961,7 +967,45 @@
 
 
 
-  /* ── Responsive: wider screens ───────────────────────────── */
+  /* ── PWA installiert ─────────────────────────────────────── */
+  body.pwa-standalone #app {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+  body.pwa-standalone .bottom-nav::after {
+    display: block;
+  }
+
+  /* ── Im Browser ──────────────────────────────────────────── */
+  body.pwa-browser #app {
+    padding-top: 0px;
+  }
+  body.pwa-browser .bottom-nav::after {
+    display: none;
+  }
+  body.pwa-browser .bottom-nav {
+    padding-bottom: 8px;
+    min-height: 56px;
+  }
+
+  /* ── Standalone PWA: kein Browser-Chrome ────────────────── */
+  @media (display-mode: standalone) {
+    #app {
+      padding-top: env(safe-area-inset-top, 0px);
+    }
+    .bottom-nav::after {
+      display: block;
+    }
+  }
+
+  /* ── Browser-Modus: Adressleiste vorhanden ───────────────── */
+  @media not (display-mode: standalone) {
+    #app {
+      padding-top: 0px;
+    }
+    .bottom-nav::after {
+      display: none;
+    }
+  }
   @media (min-width: 600px) {
     #app {
       max-width: 480px;
@@ -1622,6 +1666,26 @@
 </div>
 
 <script>
+// ── Standalone / Browser Erkennung ───────────────────────────────────────────
+(function() {
+  const isStandalone =
+    window.navigator.standalone === true || // iOS Safari PWA
+    window.matchMedia('(display-mode: standalone)').matches || // Android PWA
+    window.matchMedia('(display-mode: fullscreen)').matches;
+
+  if (isStandalone) {
+    document.body.classList.add('pwa-standalone');
+  } else {
+    document.body.classList.add('pwa-browser');
+  }
+
+  // Update dynamisch falls sich der Modus ändert
+  window.matchMedia('(display-mode: standalone)').addEventListener('change', e => {
+    document.body.classList.toggle('pwa-standalone', e.matches);
+    document.body.classList.toggle('pwa-browser', !e.matches);
+  });
+})();
+
 // ── PWA: Service Worker Registration ─────────────────────────────────────────
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
