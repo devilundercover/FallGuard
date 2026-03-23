@@ -98,12 +98,6 @@
 
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
 
-  /* Safe area Basis-Fix */
-  body {
-    padding-top: env(safe-area-inset-top);
-    padding-bottom: env(safe-area-inset-bottom);
-  }
-
   html {
     width: 100%;
     height: 100%;
@@ -126,13 +120,11 @@
   /* ── App Shell ───────────────────────────────────────────── */
   #app {
     width: 100%;
-    /* svh = kleine Viewport-Höhe (ohne Browser-Chrome) → passt im Browser UND als PWA */
-    height: 100svh;
+    height: calc(var(--vh, 1vh) * 100);
     display: flex;
     flex-direction: column;
     overflow: hidden;
     background: var(--bg);
-    /* Safe areas für Notch/Home-Indicator */
     padding-top: env(safe-area-inset-top, 0px);
     padding-left: env(safe-area-inset-left, 0px);
     padding-right: env(safe-area-inset-right, 0px);
@@ -1608,7 +1600,24 @@
 </div>
 
 <script>
-// ── PWA: Service Worker Registration ─────────────────────────────────────────
+// ── iOS Safari Viewport-Höhe Fix ─────────────────────────────────────────────
+// Safari ändert window.innerHeight nachträglich wenn die Adressleiste erscheint.
+// Wir setzen --vh einmalig beim Load auf den echten Wert und sperren ihn dann.
+(function() {
+  function setVH() {
+    // window.innerHeight ist die ECHTE sichtbare Höhe inkl. Browser-Chrome
+    const vh = window.innerHeight * 0.01;
+    document.documentElement.style.setProperty('--vh', vh + 'px');
+  }
+
+  // Einmalig beim Laden setzen
+  setVH();
+
+  // Nur bei echten Orientierungswechseln neu berechnen (nicht bei Scroll/Adressleiste)
+  window.addEventListener('orientationchange', function() {
+    setTimeout(setVH, 200);
+  });
+})();
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js')
