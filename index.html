@@ -107,13 +107,11 @@
   html {
     width: 100%;
     height: 100%;
-    height: 100dvh;
   }
 
   body {
     width: 100%;
     height: 100%;
-    height: 100dvh;
     overflow: hidden;
     background: var(--bg);
     font-family: 'DM Sans', sans-serif;
@@ -122,23 +120,22 @@
     flex-direction: column;
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
-    /* Prevent rubber-band scrolling */
     overscroll-behavior: none;
   }
 
   /* ── App Shell ───────────────────────────────────────────── */
   #app {
     width: 100%;
-    height: 100%;
-    height: 100dvh;
+    /* svh = kleine Viewport-Höhe (ohne Browser-Chrome) → passt im Browser UND als PWA */
+    height: 100svh;
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    /* Respect safe areas — extra padding-top for PWA status bar */
-    padding-top: max(var(--safe-top), 0px);
-    padding-left: var(--safe-left);
-    padding-right: var(--safe-right);
     background: var(--bg);
+    /* Safe areas für Notch/Home-Indicator */
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
   }
 
   .pages {
@@ -180,23 +177,8 @@
     position: relative;
     z-index: 100;
     padding: 8px 8px 0;
-    padding-bottom: max(env(safe-area-inset-bottom, 0px), 8px);
-    min-height: calc(56px + max(env(safe-area-inset-bottom, 0px), 8px));
-  }
-  /* Fill the physical bottom edge below the nav */
-  .bottom-nav::after {
-    content: '';
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: max(env(safe-area-inset-bottom, 0px), 0px);
-    background: rgba(30,30,36,0.98);
-    z-index: 99;
-    pointer-events: none;
-  }
-  body.light .bottom-nav::after {
-    background: rgba(244,244,246,0.98);
+    padding-bottom: env(safe-area-inset-bottom, 8px);
+    min-height: 56px;
   }
 
   .nav-item {
@@ -966,46 +948,6 @@
   #install-banner.visible { display: flex; }
 
 
-
-  /* ── PWA installiert ─────────────────────────────────────── */
-  body.pwa-standalone #app {
-    padding-top: env(safe-area-inset-top, 0px);
-  }
-  body.pwa-standalone .bottom-nav::after {
-    display: block;
-  }
-
-  /* ── Im Browser ──────────────────────────────────────────── */
-  body.pwa-browser #app {
-    padding-top: 0px;
-  }
-  body.pwa-browser .bottom-nav::after {
-    display: none;
-  }
-  body.pwa-browser .bottom-nav {
-    padding-bottom: 8px;
-    min-height: 56px;
-  }
-
-  /* ── Standalone PWA: kein Browser-Chrome ────────────────── */
-  @media (display-mode: standalone) {
-    #app {
-      padding-top: env(safe-area-inset-top, 0px);
-    }
-    .bottom-nav::after {
-      display: block;
-    }
-  }
-
-  /* ── Browser-Modus: Adressleiste vorhanden ───────────────── */
-  @media not (display-mode: standalone) {
-    #app {
-      padding-top: 0px;
-    }
-    .bottom-nav::after {
-      display: none;
-    }
-  }
   @media (min-width: 600px) {
     #app {
       max-width: 480px;
@@ -1666,26 +1608,6 @@
 </div>
 
 <script>
-// ── Standalone / Browser Erkennung ───────────────────────────────────────────
-(function() {
-  const isStandalone =
-    window.navigator.standalone === true || // iOS Safari PWA
-    window.matchMedia('(display-mode: standalone)').matches || // Android PWA
-    window.matchMedia('(display-mode: fullscreen)').matches;
-
-  if (isStandalone) {
-    document.body.classList.add('pwa-standalone');
-  } else {
-    document.body.classList.add('pwa-browser');
-  }
-
-  // Update dynamisch falls sich der Modus ändert
-  window.matchMedia('(display-mode: standalone)').addEventListener('change', e => {
-    document.body.classList.toggle('pwa-standalone', e.matches);
-    document.body.classList.toggle('pwa-browser', !e.matches);
-  });
-})();
-
 // ── PWA: Service Worker Registration ─────────────────────────────────────────
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
